@@ -1,6 +1,8 @@
 package org.ggp.base.player.gamer.statemachine.sample;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.ggp.base.apps.player.detail.DetailPanel;
 import org.ggp.base.apps.player.detail.SimpleDetailPanel;
@@ -34,6 +36,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	 {
+		 System.out.println("happy");
 	        // Do nothing.
 	 }
     /**
@@ -57,13 +60,10 @@ public final class SampleMonteCarloGamer extends SampleGamer
 
             // Perform depth charges for each candidate move, and keep track
             // of the total score and total attempts accumulated for each move.
-            int j=0;
             for (int i = 0; true; i = (i+1) % moves.size()) {
                 if (System.currentTimeMillis() > finishBy)
                     break;
-
                 int theScore = performDepthChargeFromMove(getCurrentState(), moves.get(i));
-                System.out.println((j++)+"--score:"+theScore);
                 moveTotalPoints[i] += theScore;
                 moveTotalAttempts[i] += 1;
             }
@@ -86,11 +86,23 @@ public final class SampleMonteCarloGamer extends SampleGamer
             selection = moves.get(bestMove);
         }
 
-        long stop = System.currentTimeMillis();
+        if(root==null)
+        	root=new Node(getCurrentState());
+        else {
+        	Node parentNode=nodeSearch(root,parentKey);
+        	System.out.println("parentKey :"+parentKey);
+        	System.out.println("parentNode:"+parentNode.state);
+        	parentNode.expand(getCurrentState());
+        }
 
+        showAll(root);
+        parentKey=getCurrentState();
+        long stop = System.currentTimeMillis();
+        System.out.println("?????:"+selection);
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         return selection;
     }
+
 
     private int[] depth = new int[1];
     int performDepthChargeFromMove(MachineState theState, Move myMove) {
@@ -102,6 +114,73 @@ public final class SampleMonteCarloGamer extends SampleGamer
             e.printStackTrace();
             return 0;
         }
+    }
+    public int count=0;
+
+    public class Node{
+    	int w; //times of winner
+    	int n; //times of visited
+    	MachineState state;//Board information
+    	double uctValue;
+    	double winRateSave;
+    	Node child;
+
+    	Map<MachineState ,Node>children;
+
+    	Node(MachineState state){
+    	    this.state=state;
+    	    this.w=0;
+    	    this.n=0;
+    	    this.uctValue=0;
+    	    this.child=null;
+    	    this.children= new HashMap<MachineState ,SampleMonteCarloGamer.Node>();
+    	}
+
+    	public void expand(MachineState state){
+    	    this.children.put(state,new Node(state));
+    	}
+
+    }
+
+    public Node root=null;
+    public MachineState parentKey;
+
+    public Node nodeSearch(Node n,MachineState key){
+    	if(n.children==null)
+    		return null;
+	    if(n.state.equals(key)){
+	        return n;
+		}
+
+	    if(n.children.containsKey(key)) {
+	    	return n.children.get(key);
+	    }else {
+	    	for(MachineState k:n.children.keySet()){
+	    		Node next=n.children.get(k);
+	    		next=nodeSearch(next,key);
+	    		if(next!=null)
+	    			return next;
+	    	}
+	    }
+	    return null;
+	}
+
+
+    public void showAll(Node n) {
+    	if(n==root)
+    		System.out.println(n.state);
+    	if(n.children == null){
+    		return;
+    	}
+    	int i=0;
+    	for(MachineState key:n.children.keySet()){
+    		System.out.println("times of i ==== "+i++);
+    		Node next=n.children.get(key);
+    		System.out.println(next.state);
+    		//System.out.println("n:::"+next.n+",w:::"+next.w);
+    		//nxt.printItem(nxt.list);
+    		showAll(next);
+    	}
     }
 
     @Override
