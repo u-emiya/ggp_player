@@ -1,10 +1,10 @@
 package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 import org.ggp.base.apps.player.detail.DetailPanel;
 import org.ggp.base.apps.player.detail.SimpleDetailPanel;
@@ -57,7 +57,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
 
         System.out.println("!!!!!:"+moves);
 
-
+        test=0;
 
         if (moves.size() > 1) {
             int[] moveTotalPoints = new int[moves.size()];
@@ -70,18 +70,26 @@ public final class SampleMonteCarloGamer extends SampleGamer
             }
             else {
             	n=nodeSearch(root,n.state);
-            	if(n==null)
+            	System.out.println("HIIIIIIT");
+            	if(n==null) {
             		n=new Node(getCurrentState());
+            	}
             }
-
+            System.out.println("qwwqdwdqdn.state:::"+n.state);
+         	for(MachineState key:n.children.keySet()) {
+         		System.out.println("children---n:"+n.children.get(key).v+"///w:"+n.children.get(key).w);
+         	}
             int count=0;
-            while(System.currentTimeMillis()<timeout-8000) {
+            while(System.currentTimeMillis()<finishBy) {
             	MonteCalroPlayout(n);
             	count++;
             }
             System.out.println("count***"+count);
-            showAll(root);
+            //showAll(root);
 
+            selection=selectNextPlay(n,moves);
+
+            /*
             // Perform depth charges for each candidate move, and keep track
             // of the total score and total attempts accumulated for each move.
             for (int i = 0; true; i = (i+1) % moves.size()) {
@@ -108,7 +116,9 @@ public final class SampleMonteCarloGamer extends SampleGamer
                 }
             }
             selection = moves.get(bestMove);
+            */
         }
+
         /*if(root!=null)
         	showAll(root);*/
         long stop = System.currentTimeMillis();
@@ -176,22 +186,64 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	    this.children.put(n.state,n);
     	}
 
+    	public boolean hasChild(MachineState state) {
+    		for(MachineState key:this.children.keySet()) {
+    			if(key.equals(state)) {
+    				return true;
+    			}
+    		}
+    		return false;
+    	}
 
     }
 
     public Node root=null;
     public int playerNum=0;
 
+    public Move selectNextPlay(Node n,List<Move> moves) throws MoveDefinitionException, TransitionDefinitionException {
+    	StateMachine theMachine = getStateMachine();
+        Role role=getRole();
+    	double bestWinRate=0.0;
+    	MachineState bestKey=null;
+    	Move bestMove=null;
+    	System.out.println("children");
+    	System.out.println("n.state:"+n.state);
+    	for(MachineState key:n.children.keySet()) {
+    		Node child=n.children.get(key);
+    		child.winRateCalculation();
+    		System.out.println(key);
+    		System.out.println("depth::"+child.depth);
+    		System.out.println("visit::"+child.v+"- win:::"+child.w);
+    		System.out.println("winRate:::"+child.winRate);
+        	if(child.winRate>bestWinRate) {
+        		bestWinRate=child.winRate;
+        		bestKey=key;
+        	}
+    	}
+    	System.out.println("bestKey::"+bestKey);
+    	System.out.println("bestWinRate::"+bestWinRate);
+        for(int i=0;i<moves.size();i++) {
+        	Move m=moves.get(i);
+        	if(bestKey.equals(theMachine.getRandomNextState(getCurrentState(), role, m))) {
+        		bestMove=m;
+        	}
+
+        }
+        System.out.println(bestMove);
+        return bestMove;
+    }
+
+
     public int test=0;
-    public int apple=7;
+    public int apple=3;
 
     public void MonteCalroPlayout(Node n) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
     	StateMachine theMachine = getStateMachine();
     	Node node=n;
     	Node saveNode=null;
     	MachineState state=n.getState();
-    	Deque<Node> que=new ArrayDeque<>();
-    	que.push(n);
+    	Queue<Node> que=new ArrayDeque<>();
+    	que.add(n);
     	playerNum=getRoleNumber();
     	if(test<=apple) {
     		System.out.println("test:::"+test);
@@ -201,65 +253,33 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	while(!theMachine.isTerminal(state)) {
     		node=selectChildNode(node);
       		state=node.getState();
-      		que.push(node);
+      		que.add(node);
       		playerNum=(playerNum+1)%(theMachine.getRoles().size());
       	   	if(test<=apple) {
       	   		System.out.println(node.state);
       	   	}
         }
     	int goalScore=theMachine.getGoal(state, getRole());
-    	int ko=0;
     	for (Node v : que) {
-    		ko++;
     		Node ns=nodeSearch(root,v.state);
-
-
-    		if(ns==null && test<=apple)
-    			System.out.println("v.state:::"+v.state);
-    		int a=0;
-    		if(ns!=null && ns!=root) {
-    			//System.out.println("ns.state:::"+ns.state);
-    			//System.out.println("saveNode:::"+saveNode.state);
-    			a=100;
-    		}
-    		if(saveNode!=null)
-    		if(ns!=null && nodeSearch(root,saveNode.state)==null) {
-    			saveNode.setdepthValue(ns.depth+1);
-    			saveNode.setWinValue(goalScore);
-				saveNode.VisitValueCount();
-    			ns.expand(saveNode);
-
-				if(test<=apple) {
-            		System.out.println("expand!!---ns.expand(saveNode.state)");
-            		System.out.println("ns.state:::"+ns.state);
-        			System.out.println("saveNode:::"+saveNode.state);
-        			System.out.println("vvvisit:"+saveNode.v);
-		    		System.out.println("wwwin:::"+saveNode.w);
-
-    	 	   	}
-
-    			if(a==100) {
-    			//	showAll(ns);
+    		//System.out.println("ns.state"+ns.state);
+    		if(saveNode!=null) {
+    			if(ns==null || !saveNode.hasChild(v.state)) {
+    				if(ns==null)
+    					ns=v;
+    				ns.setdepthValue(saveNode.depth+1);
+    				ns.setWinValue(goalScore);
+    				ns.VisitValueCount();
+    				saveNode.expand(ns);
+    				break;
     			}
-
     		}
-			saveNode=v;
-			if(ns!=null) {
-				ns.setWinValue(goalScore);
-	    		ns.VisitValueCount();
+			saveNode=ns;
+			ns.setWinValue(goalScore);
+			ns.VisitValueCount();
 
-		    	if(test<=apple) {
-		    		System.out.println("state:"+ns.state);
-		    		System.out.println("visit:"+ns.v);
-		    		System.out.println("win:::"+ns.w);
-		    	}
-			}
 
 		}
-     	if(test==apple ||test==40) {
-     		System.out.println("test==apple");
-     		showAll(root);
-     	}
     	test++;
     }
 
