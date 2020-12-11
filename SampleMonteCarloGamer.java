@@ -89,35 +89,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
 
             selection=selectNextPlay(n,moves);
 
-            /*
-            // Perform depth charges for each candidate move, and keep track
-            // of the total score and total attempts accumulated for each move.
-            for (int i = 0; true; i = (i+1) % moves.size()) {
-                if (System.currentTimeMillis() > finishBy)
-                    break;
-                int theScore = performDepthChargeFromMove(getCurrentState(), moves.get(i));
-                moveTotalPoints[i] += theScore;
-                moveTotalAttempts[i] += 1;
-            }
-
-            // Compute the expected score for each move.
-            double[] moveExpectedPoints = new double[moves.size()];
-            for (int i = 0; i < moves.size(); i++) {
-                moveExpectedPoints[i] = (double)moveTotalPoints[i] / moveTotalAttempts[i];
-            }
-
-            // Find the move with the best expected score.
-            int bestMove = 0;
-            double bestMoveScore = moveExpectedPoints[0];
-            for (int i = 1; i < moves.size(); i++) {
-                if (moveExpectedPoints[i] > bestMoveScore) {
-                    bestMoveScore = moveExpectedPoints[i];
-                    bestMove = i;
-                }
-            }
-            selection = moves.get(bestMove);
-            */
-        }
+           }
 
         /*if(root!=null)
         	showAll(root);*/
@@ -127,17 +99,6 @@ public final class SampleMonteCarloGamer extends SampleGamer
     }
 
 
-    private int[] depth = new int[1];
-    int performDepthChargeFromMove(MachineState theState, Move myMove) {
-        StateMachine theMachine = getStateMachine();
-        try {
-            MachineState finalState = theMachine.performDepthCharge(theMachine.getRandomNextState(theState, getRole(), myMove), depth);
-            return theMachine.getGoal(finalState, getRole());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
     public int count=0;
 
     public class Node{
@@ -145,9 +106,13 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	int v; //times of visited
     	MachineState state;//Board information
     	double uctValue;
-    	double winRate;
+    	//double winRate;
     	int depth;
     	Map<MachineState ,Node>children;
+
+    	//mark!!!
+    	int winValue[];
+    	double winRate[];
 
     	Node(MachineState state){
     	    this.state=state;
@@ -156,13 +121,25 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	    this.depth=0;
     	    this.uctValue=0;
     	    this.children= new HashMap<MachineState ,SampleMonteCarloGamer.Node>();
+
+    	    //mark!!
+    	    this.winValue=new int[getStateMachine().getRoles().size()];
+    	    this.winRate=new double[getStateMachine().getRoles().size()];
+
     	}
     	public MachineState getState() {
     		return this.state;
     	}
-    	public void setWinValue(int w) {
+    	/*public void setWinValue(int w) {
     		this.w+=w;
+    	}*/
+    	public void setWinValue(int[] value) {
+    		for(int i=0;i<winValue.length;i++) {
+    			this.winValue[i]+=value[i];
+    		}
     	}
+
+
     	public void setdepthValue(int depth) {
     		this.depth+=depth;
     	}
@@ -170,14 +147,24 @@ public final class SampleMonteCarloGamer extends SampleGamer
     		this.v++;
     	}
 
-    	public void uctCalculation() {
-    		double logVisitedValue=Math.log(v);
-    		double searchValue=Math.sqrt(logVisitedValue/children.size());
-    		uctValue=winRate+searchValue;
-    	}
+    	/*
     	public void winRateCalculation() {
-    		if(v!=0)
+    		if(v!=0) {
     			winRate=w/v;
+    			winRate=winRate/100;
+    		}else
+    			System.out.println("error:have not visited");
+    	}*/
+
+    	//mark!!!
+    	public void winRateCalculation() {
+    		if(v!=0) {
+    	    	//mark!!!
+    	    	for(int i=0;i<winValue.length;i++) {
+    	    		double value=(double)this.v*100;
+    	    		this.winRate[i]=(double)this.winValue[i]/value;
+    	    	}
+    		}
     		else
     			System.out.println("error:have not visited");
     	}
@@ -206,17 +193,21 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	double bestWinRate=0.0;
     	MachineState bestKey=null;
     	Move bestMove=null;
+    	int bestValue=0;
     	System.out.println("children");
     	System.out.println("n.state:"+n.state);
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
-    		child.winRateCalculation();
+    		//child.winRateCalculation();
+    		/*
     		System.out.println(key);
     		System.out.println("depth::"+child.depth);
     		System.out.println("visit::"+child.v+"- win:::"+child.w);
     		System.out.println("winRate:::"+child.winRate);
-        	if(child.winRate>bestWinRate) {
-        		bestWinRate=child.winRate;
+    		*/
+        	if(child.v>bestValue) {
+        		//bestWinRate=child.winRate;
+        		bestValue=child.v;
         		bestKey=key;
         	}
     	}
@@ -235,7 +226,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
 
 
     public int test=0;
-    public int apple=3;
+    public int apple=40;
 
     public void MonteCalroPlayout(Node n) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
     	StateMachine theMachine = getStateMachine();
@@ -244,7 +235,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	MachineState state=n.getState();
     	Queue<Node> que=new ArrayDeque<>();
     	que.add(n);
-    	playerNum=getRoleNumber();
+    	playerNum=getOwnRoleNumber();
     	if(test<=apple) {
     		System.out.println("test:::"+test);
     		System.out.println(n.state);
@@ -259,7 +250,23 @@ public final class SampleMonteCarloGamer extends SampleGamer
       	   		System.out.println(node.state);
       	   	}
         }
-    	int goalScore=theMachine.getGoal(state, getRole());
+    	//int goalScore=theMachine.getGoal(state, getRole());
+
+    	List<Role> roleList=theMachine.getRoles();
+    	int totalPlayer=roleList.size();
+    	int[] goalScore=new int[totalPlayer];
+
+    	//mark!!!
+    	for(int i=0;i<totalPlayer;i++) {
+    		Role l=roleList.get(i);
+    		goalScore[i]=theMachine.getGoal(state,l);
+    	}
+    	if(test<apple) {
+    		System.out.println("socre test");
+    		//System.out.println("goalScore:::::"+goalScore);
+    		System.out.println("goalScore:"+goalScore[getOwnRoleNumber()]);
+    	}
+
     	for (Node v : que) {
     		Node ns=nodeSearch(root,v.state);
     		//System.out.println("ns.state"+ns.state);
@@ -268,14 +275,16 @@ public final class SampleMonteCarloGamer extends SampleGamer
     				if(ns==null)
     					ns=v;
     				ns.setdepthValue(saveNode.depth+1);
-    				ns.setWinValue(goalScore);
+    				//ns.setWinValue(goalScore);
+    				ns.setWinValue(goalScore);//mark!!!
     				ns.VisitValueCount();
     				saveNode.expand(ns);
     				break;
     			}
     		}
 			saveNode=ns;
-			ns.setWinValue(goalScore);
+			//ns.setWinValue(goalScore);
+			ns.setWinValue(goalScore);//mark!!!
 			ns.VisitValueCount();
 
 
@@ -306,7 +315,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
 
     }
 
-    public int getRoleNumber() {
+    public int getOwnRoleNumber() {
     	StateMachine theMachine = getStateMachine();
     	List<Role> roleList=theMachine.getRoles();
     	Role l=getRole();
@@ -322,22 +331,39 @@ public final class SampleMonteCarloGamer extends SampleGamer
     		System.out.println("uctvalue");
     	double logVisitedValue=Math.log(parent.v);
     	double searchValue=0;
-    	double C=50.0;
+    	double C=0.7;
 
     	if(child.v!=0) {
     		searchValue=Math.sqrt(logVisitedValue/child.v);
     	}else
     		searchValue=Double.MAX_VALUE;
-     	child.winRateCalculation();
+     	//child.winRateCalculation();
+     	child.winRateCalculation();//mark!!
      	if(test<=apple) {
+     		System.out.println("getRoleNum::"+getOwnRoleNumber());
      		System.out.println("child state:"+child.state);
-    		System.out.println("winRate:::::"+child.winRate);
+    		//System.out.println("winRate:::::"+child.winRate);
     		System.out.println("searchValue:"+searchValue);
     		System.out.println("parenttimes:"+parent.v);
     		System.out.println("win total:::"+child.w);
     		System.out.println("visit times:"+child.v);
+    		for(int i=0;i<child.winValue.length;i++) {
+    			System.out.println(i+"--winRate:"+child.winRate[i]);
+    			/*if(i==0&&child.winRateKari[i]!=child.winRate) {
+    				System.out.println("HHHHHHHIIIIIIIIIIITTTTTTT");
+    				System.out.println("winValue:"+child.winValue[i]);
+    		 		double value=child.v*100;
+    		 		System.out.println("value:"+value);
+    	    		System.out.println("GO!:"+child.winValue[i]/value);
+
+    			}
+    			*/
+    		}
+
      	}
-     	double uctValue=child.winRate+C*searchValue;
+
+     	//double uctValue=child.winRate+C*searchValue;
+     	double uctValue=child.winRate[playerNum]+C*searchValue;
 
     	return uctValue;
     }
