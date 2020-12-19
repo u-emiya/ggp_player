@@ -61,7 +61,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
         System.out.println("!!!!!:"+moves);
 
         test=0;
-
+        Node f=null;
         if (moves.size() > 1) {
 
             Node n=new Node(getCurrentState());
@@ -96,8 +96,12 @@ public final class SampleMonteCarloGamer extends SampleGamer
             //showAll(root);
 
             selection=selectNextPlay(n,moves);
+            f=n;
            }
-        System.out.println("super!!!!!!"+selection);
+        //showAll(root);
+        System.out.println("f.state------"+f.state);
+        System.out.println("moves!!!!!!---"+moves);
+        System.out.println("super!!!!!!---"+selection);
         //showAll(root);
         long stop = System.currentTimeMillis();
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
@@ -233,15 +237,16 @@ public final class SampleMonteCarloGamer extends SampleGamer
 
     		else if(ns==null) {
     			supertest++;
+    			System.out.println("*******************************************");
     			System.out.println("this state:"+v.state);
-    			//showAll(root);
+    			System.out.println("lastNode state:"+lastNode.state);
+    			showAll(root);
 
     			ns=v;
-    			root=ns;
-    			ns.setdepthValue(0);
+    			ns.setdepthValue(lastNode.depth+1);
 				ns.setWinValue(goalScore);//mark!!!
 				ns.visitValueCount();
-				//saveNode.expand(ns);
+				lastNode.expand(ns);
 				break;
 
     		}
@@ -279,16 +284,24 @@ public final class SampleMonteCarloGamer extends SampleGamer
         	}
     	}
     	lastNode=nodeSearch(root,bestState);
-    	/*
+
+
     	System.out.println("bestKey::"+bestState);
-    	System.out.println("bestWinRate::"+bestWinRate);
-    	*/
+
+    	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
         for(int i=0;i<moves.size();i++) {
         	Move m=moves.get(i);
+        	List<MachineState> stateList=map.get(m);
+        	if(stateList.contains(bestState)) {
+        		bestMove=m;
+        		break;
+        	}
+        	/*
         	if(bestState.equals(theMachine.getRandomNextState(getCurrentState(), role, m))) {
         		bestMove=m;
         		break;
         	}
+        	*/
 
         }
         System.out.println(bestMove);
@@ -304,9 +317,6 @@ public final class SampleMonteCarloGamer extends SampleGamer
     			Node child=n.children.get(key);
     			double uctValue=uctCalculation(n,child);
     			if(uctValue>saveValue) {
-    		    	if(test<=apple) {
-    		    		System.out.println("!!!change!!!:::"+uctValue);
-    		    	}
     				saveValue=uctValue;
     				selectNode=child;
     			}
@@ -331,8 +341,6 @@ public final class SampleMonteCarloGamer extends SampleGamer
     }
 
     public double uctCalculation(Node parent,Node child) {
-    	if(test<=apple)
-    		System.out.println("uctvalue");
     	double logVisitedValue=Math.log(parent.v);
     	double searchValue=0;
     	double C=0.7;
@@ -341,8 +349,8 @@ public final class SampleMonteCarloGamer extends SampleGamer
     		searchValue=Math.sqrt(logVisitedValue/child.v);
     	}else
     		searchValue=Double.MAX_VALUE;
-     	//child.winRateCalculation();
      	child.winRateCalculation();//mark!!
+     	/*
      	if(test<=apple) {
      		System.out.println("getRoleNum::"+getOwnRoleNumber());
      		System.out.println("child state:"+child.state);
@@ -352,7 +360,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
     		System.out.println("visit times:"+child.v);
     		for(int i=0;i<child.winValue.length;i++) {
     			System.out.println(i+"--winRate:"+child.winRate[i]);
-    			/*if(i==0&&child.winRateKari[i]!=child.winRate) {
+    			if(i==0&&child.winRateKari[i]!=child.winRate) {
     				System.out.println("HHHHHHHIIIIIIIIIIITTTTTTT");
     				System.out.println("winValue:"+child.winValue[i]);
     		 		double value=child.v*100;
@@ -360,10 +368,10 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	    		System.out.println("GO!:"+child.winValue[i]/value);
 
     			}
-    			*/
+
     		}
 
-     	}
+     	}*/
 
      	//double uctValue=child.winRate+C*searchValue;
      	double uctValue=child.winRate[playerNum]+C*searchValue;
@@ -442,7 +450,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
 	}
 
     public void showAll(Node n) {
-    	if(n.depth<=100) {
+    	if(n.depth<=1) {
     		System.out.println("--- show all ---");
     		System.out.println(n.state);
     		System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
