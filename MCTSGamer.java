@@ -480,7 +480,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
 
     @Override
     public String getName() {
-        return "MonteCarlo_Player";
+        return "MCTSPlayer";
     }
 
     @Override
