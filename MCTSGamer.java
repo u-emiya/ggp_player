@@ -36,13 +36,50 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
  *
  * @author Sam Schreiber
  */
-public final class SampleMonteCarloGamer extends SampleGamer
+public final class MCTSGamer extends SampleGamer
 {
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	 {
+		  StateMachine theMachine = getStateMachine();
 		 System.out.println("happy");
 		 initAll();
+		 //test
+		 int[] aaa= {1,2,3};
+		 String hashKey;
+		 Node n=new Node(getCurrentState());
+		 hashKey=MCTSutils.hash(n.state.toString(),7);
+		 System.out.println("hash check for<n>:"+hashKey);
+		 addPlayoutMemorys(hashKey,n,aaa);
+		 addPlayoutMemorys(hashKey,n,aaa);
+
+		 Node m=new Node(getCurrentState());
+		 hashKey=MCTSutils.hash(m.state.toString(),7);
+		 System.out.println("hash check for<m>:"+hashKey);
+		 addPlayoutMemorys(hashKey,m,aaa);
+
+		 MachineState sta=theMachine.getRandomNextState(getCurrentState());
+		 Node nm=new Node(sta);
+		 hashKey=MCTSutils.hash(nm.state.toString(),7);
+		 System.out.println("hash check for<nm>:"+hashKey);
+		 addPlayoutMemorys(hashKey,nm,aaa);
+
+		 sta=theMachine.getRandomNextState(getCurrentState());
+		 Node nmnm=new Node(sta);
+		 hashKey=MCTSutils.hash(nmnm.state.toString(),7);
+		 System.out.println("hash check for<nmnm>:"+hashKey);
+		 addPlayoutMemorys(hashKey,nmnm,aaa);
+		 for(String s:playoutMemorys.keySet()) {
+			 List<Node> lst=playoutMemorys.get(s);
+			 System.out.println(s);
+		 	 for(Node mmm:lst) {
+				 System.out.println("mmm:"+mmm.getState());
+			 }
+		 }
+		 String str="aababbacbadbaebafbagbahbbabbbbbcobdbbebbfbbgbbhxcabcbbccbcdbcebcfbcgbchbdabdbbdcbddbdebdfbdgbdhbeabebbecbedbeebefbegbehbfabfbbfcbfdbfebffbfgbfhbgabgbbgcbgdbgebgfbggbghbhabhbbhcbhdbhebhfbhgbhhb";
+		 System.out.println(MCTSutils.hash(str,7));
+
+		 //System.out.println(getMatch().getMatchId());
 	        // Do nothing.
 	 }
     /**
@@ -59,7 +96,9 @@ public final class SampleMonteCarloGamer extends SampleGamer
         Move selection = moves.get(0);
 
         System.out.println("!!!!!:"+moves);
-
+        if(lastNode!=null) {
+        	System.out.println(lastNode.state);
+        }
         test=0;
         Node f=null;
         if (moves.size() > 1) {
@@ -96,10 +135,33 @@ public final class SampleMonteCarloGamer extends SampleGamer
             //showAll(root);
 
             selection=selectNextPlay(n,moves);
-           }
+            /*
+            for (MachineState key : playoutMemory.keySet()) {
+            	Node nm=playoutMemory.get(key);
+                System.out.println(key + ":" + nm.v);
+            }*/
+            System.out.println("size---"+playoutMemory.size());
+            System.out.println("!!!!!!---"+kokko);
+        }else {
+        	long time[]= {timeout-5000,timeout-4000,timeout-3000,timeout-2000,timeout-1000,timeout-100};
+    		int i=0;
+        	while(true) {
+        		if(System.currentTimeMillis()==time[i]) {
+               		System.out.println(i+":"+time[i]);
+               		i++;
+        		}
+        		if(i>5)
+        			break;
+        	}
+        }
         //showAll(root);
-        System.out.println("moves!!!!!!---"+moves);
         System.out.println("super!!!!!!---"+selection);
+
+        MachineState m=getCurrentState();
+        String s=m.toString();
+        System.out.println("state string:::"+s);
+        System.out.println();
+
         //showAll(root);
         long stop = System.currentTimeMillis();
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
@@ -130,7 +192,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
     		this.v=0;
     	    this.state=state;
     	    this.depth=0;
-    	    this.children= new HashMap<MachineState ,SampleMonteCarloGamer.Node>();
+    	    this.children= new HashMap<MachineState ,MCTSGamer.Node>();
     	    //mark!!
     	    this.winValue=new int[totalPlayerNumber];
     	    this.winRate=new double[totalPlayerNumber];
@@ -217,10 +279,41 @@ public final class SampleMonteCarloGamer extends SampleGamer
     		goalScore[i]=theMachine.getGoal(state,l);
     	}
 
+    	Node parent=null;
+    	int kakko=0;
+    	for (Node v : que) {
+    		//old
+    		addPlayoutMemory(v,goalScore);
+    		//new
+    		String hashKey=MCTSutils.preprocess(v.state.toString());
+    		hashKey=MCTSutils.hash(hashKey, 7);
+    		addPlayoutMemorys(hashKey,v,goalScore);
+    		kakko++;
+    		if(parent!=null) {
+    			if(test<1)
+        			System.out.println(MCTSutils.preprocess(parent.state.toString()));
+    			String pa=parent.state.toString();
+    			pa=MCTSutils.preprocess(pa);
+    			pa=MCTSutils.hash(pa, 7);
+        		String jr=hashKey;
+        		addBigramMemory(pa,jr);
+    		}
+    		parent=v;
+    	}
+    	//test
+    	if(test<1)
+    	for(String s:bigramMemory.keySet()) {
+    		List<String> ls=bigramMemory.get(s);
+    		System.out.println("parent::"+s);
+    		for(String sss:ls) {
+    			System.out.println("child:::"+sss);
+    		}
+    	}
+    	if(test<1)
+        	System.out.println(kakko);
+
     	for (Node v : que) {
     		Node ns=nodeSearch(root,v.state);
-
-
     		if(saveNode!=null) {
     			if(/*ns==null ||*/ !saveNode.hasChild(v.state)) {
     				if(ns==null)
@@ -238,7 +331,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
     			System.out.println("*******************************************");
     			System.out.println("this state:"+v.state);
     			System.out.println("lastNode state:"+lastNode.state);
-    			showAll(root);
+    			//showAll(root);
 
     			ns=v;
     			ns.setdepthValue(lastNode.depth+1);
@@ -341,37 +434,13 @@ public final class SampleMonteCarloGamer extends SampleGamer
     public double uctCalculation(Node parent,Node child) {
     	double logVisitedValue=Math.log(parent.v);
     	double searchValue=0;
-    	double C=0.7;
+    	double C=0.5;
 
     	if(child.v!=0) {
     		searchValue=Math.sqrt(logVisitedValue/child.v);
     	}else
     		searchValue=Double.MAX_VALUE;
      	child.winRateCalculation();//mark!!
-     	/*
-     	if(test<=apple) {
-     		System.out.println("getRoleNum::"+getOwnRoleNumber());
-     		System.out.println("child state:"+child.state);
-    		//System.out.println("winRate:::::"+child.winRate);
-    		System.out.println("searchValue:"+searchValue);
-    		System.out.println("parenttimes:"+parent.v);
-    		System.out.println("visit times:"+child.v);
-    		for(int i=0;i<child.winValue.length;i++) {
-    			System.out.println(i+"--winRate:"+child.winRate[i]);
-    			if(i==0&&child.winRateKari[i]!=child.winRate) {
-    				System.out.println("HHHHHHHIIIIIIIIIIITTTTTTT");
-    				System.out.println("winValue:"+child.winValue[i]);
-    		 		double value=child.v*100;
-    		 		System.out.println("value:"+value);
-    	    		System.out.println("GO!:"+child.winValue[i]/value);
-
-    			}
-
-    		}
-
-     	}*/
-
-     	//double uctValue=child.winRate+C*searchValue;
      	double uctValue=child.winRate[playerNum]+C*searchValue;
 
     	return uctValue;
@@ -383,8 +452,16 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	while(true) {
     		List<Move> a=theMachine.getRandomJointMove(n.getState());
     		nextState = theMachine.getNextState(n.getState(),a );
-            if(!n.children.containsKey(nextState))
-           	  break;
+            if(!n.children.containsKey(nextState)) {
+
+            	if(playoutMemory.containsKey(nextState)) {
+            		Node m=playoutMemory.get(nextState);
+               	 	//System.out.println("nextState:"+m.state);
+               	 	//System.out.println("visit times:"+m.v+"win value:"+m.winValue[0]);
+            	}
+
+            	break;
+            }
     	}
     	return nextState;
     }
@@ -465,6 +542,59 @@ public final class SampleMonteCarloGamer extends SampleGamer
     		showAll(next);
     	}
     }
+    //test method
+	Map<MachineState ,Node> playoutMemory = new HashMap<MachineState ,MCTSGamer.Node>();
+	public int kokko=0;
+	public void addPlayoutMemory(Node n,int[] goalScore) {
+		Node m;
+		kokko++;
+		if(playoutMemory.containsKey(n.state)) {
+			m=playoutMemory.get(n.state);
+		}else {
+			m=new Node(n.state);
+			playoutMemory.put(m.state,m);
+		}
+		m.visitValueCount();
+		m.setWinValue(goalScore);
+	}
+
+	Map<String,ArrayList<Node>> playoutMemorys = new HashMap<>();
+	Map<String,ArrayList<String>> bigramMemory = new HashMap<>();
+	public void addPlayoutMemorys(String hash,Node n,int[] goalScore) {
+		Node m=n;
+		if(!playoutMemorys.containsKey(hash)) {
+			ArrayList<Node> ls=new ArrayList<>();
+			ls.add(n);
+			playoutMemorys.put(hash, ls);
+		}else {
+			//衝突
+			ArrayList<Node> ls=playoutMemorys.get(hash);
+			boolean flag=false;
+			for(Node nod:ls) {
+				if(nod.getState().equals(n.getState())) {
+					m=nod;
+					flag=true;
+					break;
+				}
+			}
+			if(!flag) {
+				ls.add(n);
+			}
+		}
+		m.visitValueCount();
+		m.setWinValue(goalScore);
+		//System.out.println("visit::"+m.v+", score::"+m.winValue[0]);
+	}
+	public void addBigramMemory(String parent,String child) {
+		if(!bigramMemory.containsKey(parent)) {
+			ArrayList<String> ls=new ArrayList<>();
+			ls.add(child);
+			bigramMemory.put(parent, ls);
+		}else {
+			List<String> ls=bigramMemory.get(parent);
+			ls.add(child);
+		}
+	}
 
     @Override
     public void stateMachineStop() {
