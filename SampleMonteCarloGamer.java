@@ -257,6 +257,7 @@ public final class SampleMonteCarloGamer extends SampleGamer
     	test++;
     }
 
+
     public Move selectNextPlay(Node n,List<Move> moves) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
         Role role=getRole();
