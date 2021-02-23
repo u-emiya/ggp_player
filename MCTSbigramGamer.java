@@ -36,7 +36,7 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
  *
  * @author Sam Schreiber
  */
-public final class MCTSGamer extends SampleGamer
+public final class MCTSbigramGamer extends SampleGamer
 {
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -44,7 +44,6 @@ public final class MCTSGamer extends SampleGamer
 		 StateMachine theMachine = getStateMachine();
 		 System.out.println("happy");
 		 initAll();
-		 totalPC=0;
 		 /*
 		 //test
 		 int[] aaa= {1,2,3};
@@ -86,18 +85,16 @@ public final class MCTSGamer extends SampleGamer
 		 }
 		 String str="aababbacbadbaebafbagbahbbabbbbbcobdbbebbfbbgbbhxcabcbbccbcdbcebcfbcgbchbdabdbbdcbddbdebdfbdgbdhbeabebbecbedbeebefbegbehbfabfbbfcbfdbfebffbfgbfhbgabgbbgcbgdbgebgfbggbghbhabhbbhcbhdbhebhfbhgbhhb";
 		 System.out.println(MCTSutils.hash(str,7));
-*/
+		*/
 		 //System.out.println(getMatch().getMatchId());
-	        // Do nothing.
+	     // Do nothing.
 		 System.out.println("start:::start:::start:::start:::start:::start:::start:::start:::start:::start");
 	 }
     /**
      * Employs a simple sample "Monte Carlo" algorithm.
      */
 	 int kokoko=0;
-	 public int playoutCount=0;
-	 public int totalPC=0;
-	 @Override
+    @Override
     public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
     {
         StateMachine theMachine = getStateMachine();
@@ -110,10 +107,12 @@ public final class MCTSGamer extends SampleGamer
         if(lastNode!=null) {
         	System.out.println(lastNode.state);
         }
+        //removePlayoutMemory();
         test=0;
         Node n=new Node(getCurrentState());
         if(root==null) {
         	root=n;
+        	lastNode=root;
         }
         else{
         	Node nm=nodeSearch(root,n.state);
@@ -121,20 +120,13 @@ public final class MCTSGamer extends SampleGamer
         		n=nm;
         	}
         }
-        int appleCount=0;
-//        while(appleCount<100) {
-  //      	appleCount++;
 
-        playoutCount=0;
         //while(System.currentTimeMillis()<finishBy) {
         for(int i=0;i<500;i++) {
-        	playoutCount++;
         	MonteCalroPlayout(n);
        	}
-        totalPC=playoutCount;
         System.out.println("testCount:::"+testCount);
         System.out.println((kokoko++)+"::count***"+test);
-        System.out.println("total:"+totalPC);
 
         if (moves.size() > 1) {
         	selection=selectNextPlay(n,moves);
@@ -145,45 +137,53 @@ public final class MCTSGamer extends SampleGamer
         String s=m.toString();
         System.out.println("state string:::"+s);
         globalDepth=n.depth+1;
-        //aacshowAll(n);
+        //showAll(n);
+        /*
+		for(String ss:playoutMemorys.keySet()) {
+    		List<Node> lss=playoutMemorys.get(ss);
+    		for(Node sss:lss) {
+    			//System.out.println("state:"+MCTSutils.preprocess(sss.state.toString()));
+    			System.out.println("depth:"+sss.depth+", visit:"+sss.v);
+    			if(sss.depth==0)
+    				System.out.println("state:"+sss.state.toString());
 
-        SampleMonteCarloGamer.pcSet(playoutCount);
+    		}
+    	}
+    	*/
 
         lastNode=n;
         System.out.println("size::"+playoutMemorys.size());
         long stop = System.currentTimeMillis();
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
+        System.out.println(System.currentTimeMillis()-start);
         return selection;
     }
+
+    public int totalPlayerNumber;//total number of players
+    public Node root=null;//root node
+    public int playerNum=0;//actual current player number
 
     public void initAll() {
     	root=null;
     	totalPlayerNumber=getStateMachine().getRoles().size();
-    	count=0;
     	playoutMemorys = new HashMap<>();
     	bigramMemory = new HashMap<>();
-   }
-
-    public int count=0;
-    public int totalPlayerNumber;
-    public Node root=null;
-    public int playerNum=0;
+    }
 
     public class Node{
     	int v; //times of visited
     	MachineState state;//Board information
-    	int depth;
-    	Map<MachineState ,Node>children;
+    	int depth;//depth from root node
+    	Map<MachineState ,Node> children;//all of child node
 
-    	int winValue[];
-    	double winRate[];
+    	int winValue[];//accumulated points
+    	double winRate[];//(winValue/v)
 
     	Node(MachineState state){
     		this.v=0;
     	    this.state=state;
     	    this.depth=0;
-    	    this.children= new HashMap<MachineState ,MCTSGamer.Node>();
-    	    //mark!!
+    	    this.children= new HashMap<MachineState ,MCTSbigramGamer.Node>();
     	    this.winValue=new int[totalPlayerNumber];
     	    this.winRate=new double[totalPlayerNumber];
     	}
@@ -205,8 +205,7 @@ public final class MCTSGamer extends SampleGamer
     		this.v++;
     	}
 
-        	//mark!!!
-    	public void winRateCalculation() {
+     	public void winRateCalculation() {
     		if(v!=0) {
     	    	//mark!!!
     	    	for(int i=0;i<winValue.length;i++) {
@@ -239,7 +238,6 @@ public final class MCTSGamer extends SampleGamer
     public int supertest=0;
     public Node lastNode=null;
 
-
     public void MonteCalroPlayout(Node n) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
     	StateMachine theMachine = getStateMachine();
     	Node node=n;
@@ -247,31 +245,14 @@ public final class MCTSGamer extends SampleGamer
     	MachineState state=n.getState();
     	Queue<Node> que=new ArrayDeque<>();
     	que.add(n);
-    	int testCountSub=0;
     	playerNum=getCurrentPlayerNum();
-    	/*
-    	if(test<3) {
-    		System.out.println("signe oufavnajfnbkgna");
-    		System.out.println("get Role:"+getRole());
-    		System.out.println("get Role number:"+getOwnRoleNumber());
-    		System.out.println("get random:"+theMachine.getRandomJointMove(getCurrentState()));
-    		System.out.println("get number:"+getCurrentPlayerNum());
-    		System.out.println("is this simultane?:"+isSimultane());
 
-    	}*/
-    	int kakkoaa=0;
     	while(!theMachine.isTerminal(state)) {
     		node=selectChildNode(node);
     		state=node.getState();
       	   	que.add(node);
       		playerNum=(playerNum+1)%(theMachine.getRoles().size());
-      	   	testCountSub++;
-      	   	kakkoaa++;
-        }
-    	if(testCount<testCountSub) {
-    		testCount=testCountSub;
-    		System.out.println("HIT***"+testCount);
-    	}
+     	}
 
     	List<Role> roleList=theMachine.getRoles();
     	int totalPlayer=roleList.size();
@@ -282,18 +263,12 @@ public final class MCTSGamer extends SampleGamer
     	}
 
     	Node parent=null;
-    	int kakko=0;
     	for (Node v : que) {
-    		//new
     		String hashKey=MCTSutils.preprocess(v.state.toString());
     		hashKey=MCTSutils.hash(hashKey, 7);
     		v.visitValueCount();
     		v.setWinValue(goalScore);
-    		addPlayoutMemorys(hashKey,v,goalScore);
-    		kakko++;
     		if(parent!=null) {
-    			//if(test<1)
-        			//System.out.println(MCTSutils.preprocess(parent.state.toString()));
     			String pa=parent.state.toString();
     			pa=MCTSutils.preprocess(pa);
     			pa=MCTSutils.hash(pa, 7);
@@ -301,72 +276,48 @@ public final class MCTSGamer extends SampleGamer
         		addBigramMemory(pa,jr);
         		v.setdepthValue(parent.depth+1);
         	}
+    		addPlayoutMemorys(hashKey,v,goalScore);
     		parent=v;
     	}
-    	//test
-    	/*
-    	if(test<1)
-    	for(String s:bigramMemory.keySet()) {
-    		List<String> ls=bigramMemory.get(s);
-    		System.out.println("parent::"+s);
-    		for(String sss:ls) {
-    			System.out.println("child:::"+sss);
-    		}
-    	}
-    	 */
+
     	saveNode=que.poll();
     	Node nm=nodeSearch(root,saveNode.state);
+    	//Node nm=nodeSearch(lastNode,saveNode.state);
     	if(nm==null) {
     		System.out.println("HHHHHHHHHHHHHIIIIIIIIIIIIITTTTTTTTT");
     		lastNode.expand(saveNode);
+    		System.out.println("expand:"+MCTSutils.preprocess(saveNode.state.toString()));
     	}
     	for (Node v : que) {
     		Node ns=nodeSearch(root,v.state);
-    		/*Node nsTest=nodeSearch(n,v.state);
-    		if(ns!=null && nsTest==null) {
-    			System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-
-    		}*/
+    		//Node ns=nodeSearch(n,v.state);
     		if( ns==null) {
     			saveNode.expand(v);
-    			break;
+        		break;
     		}else if(!saveNode.hasChild(v.state)) {
     			saveNode.expand(ns);
-    			break;
+        		break;
     		}
     		saveNode=ns;
     	}
+
     	test++;
     }
 
     public Move selectNextPlay(Node n,List<Move> moves) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
         Role role=getRole();
-    	double bestWinRate=0.0;
     	MachineState bestState=null;
     	Move bestMove=null;
     	int bestValue=0;
-    	/*
-    	System.out.println("children");
-    	System.out.println("n.state:"+n.state);
-    	*/
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
-    		/*
-    		System.out.println(key);
-    		System.out.println("depth::"+child.depth);
-    		System.out.println("visit::"+child.v+"- win:::"+child.winValue[getOwnRoleNumber()]);
-    		System.out.println("winRate:::"+child.winRate[getOwnRoleNumber()]);
-    		*/
         	if(child.v>bestValue) {
         		bestValue=child.v;
         		bestState=key;
         	}
     	}
     	//lastNode=nodeSearch(root,bestState);
-
-
-    	System.out.println("bestKey::"+bestState);
 
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
         for(int i=0;i<moves.size();i++) {
@@ -376,15 +327,8 @@ public final class MCTSGamer extends SampleGamer
         		bestMove=m;
         		break;
         	}
-        	/*
-        	if(bestState.equals(theMachine.getRandomNextState(getCurrentState(), role, m))) {
-        		bestMove=m;
-        		break;
-        	}
-        	*/
 
         }
-        System.out.println(bestMove);
         return bestMove;
     }
 
@@ -395,21 +339,17 @@ public final class MCTSGamer extends SampleGamer
     	Node selectNode=null;
     	if(unExploredState(n)) {
     		double saveValue=0;
-    		testLs=new ArrayList<>();
     		for(MachineState key:n.children.keySet()) {
     			Node child=n.children.get(key);
     			double uctValue=uctCalculation(n,child);
-    			testLs.add(uctValue);
     			if(uctValue>saveValue) {
     				saveValue=uctValue;
     				selectNode=child;
     			}
     		}
-    		abokado="hahanoha";
     	}else {
     		MachineState state=getUnexploredState(n);
     		selectNode=new Node(state);
-    		abokado="sasanishiki";
     	}
     	return selectNode;
 
@@ -433,8 +373,9 @@ public final class MCTSGamer extends SampleGamer
 
     	if(child.v!=0) {
     		searchValue=Math.sqrt(logVisitedValue/child.v);
-    	}else
+    	}else {
     		searchValue=Double.MAX_VALUE;
+    	}
      	child.winRateCalculation();//mark!!
      	double uctValue=child.winRate[playerNum]+C*searchValue;
 
@@ -444,9 +385,22 @@ public final class MCTSGamer extends SampleGamer
     public MachineState getUnexploredState(Node n) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
     	 MachineState nextState;
-    	 int count=0;
+    	 Node nm=selectPlayoutMemory(n);
+    	 if(nm!=null) {
+    		 /*
+    		 System.out.println("parent:"+MCTSutils.preprocess(n.state.toString()));
+    		 System.out.println("child::"+MCTSutils.preprocess(nm.state.toString()));
+    		 System.out.println("visit::"+nm.v);
+    		 System.out.println("winrate:"+nm.winRate[playerNum]);
+    		 System.out.println("rnd:"+rnd);
+    		 */
+    		 double score=nm.winRate[playerNum];
+        	 double rnd=Math.random();
+        	 if(score>rnd) {
+        		 return nm.state;
+        	 }
+         }
     	while(true) {
-    		count++;
     		List<Move> a=theMachine.getRandomJointMove(n.getState());
     		nextState = theMachine.getNextState(n.getState(),a );
             if(!n.children.containsKey(nextState)) {
@@ -585,6 +539,7 @@ public final class MCTSGamer extends SampleGamer
 			ls.add(m);
 			m.visitValueCount();
 			m.setWinValue(goalScore);
+			m.setdepthValue(n.depth);
 			playoutMemorys.put(hash, ls);
 		}else {
 			//衝突
@@ -594,6 +549,7 @@ public final class MCTSGamer extends SampleGamer
 				if(nod.getState().equals(m.getState())) {
 					nod.visitValueCount();
 					nod.setWinValue(goalScore);
+					nod.setdepthValue(n.depth);
 					flag=true;
 					break;
 				}
@@ -603,6 +559,57 @@ public final class MCTSGamer extends SampleGamer
 			}
 		}
 		//System.out.println("visit::"+m.v+", score::"+m.winValue[0]);
+	}
+
+	public void removePlayoutMemory() {
+		ArrayList<String> sls=new ArrayList<>();
+		for(String s:playoutMemorys.keySet()) {
+			ArrayList<Node> nls=playoutMemorys.get(s);
+			Node m=nls.get(0);
+			if(m.depth<globalDepth) {
+				//System.out.println("m.depth:"+m.depth+", globalDepth:"+globalDepth);
+				sls.add(s);
+			}
+		}
+		for(String s:sls) {
+			//System.out.println(MCTSutils.preprocess(playoutMemorys.get(s).get(0).state.toString()));
+			playoutMemorys.remove(s);
+		}
+	}
+
+	public Node selectPlayoutMemory(Node n) {
+		String key=getHashCode(n);
+		ArrayList<String> ls=bigramMemory.get(key);
+		if(ls==null)
+			return null;
+		double saveScore=0.0;
+		int visit=0;
+		Node saven=null;
+		//System.out.println("same");
+		for(String s:ls) {
+			if(playoutMemorys.containsKey(s)) {
+				ArrayList<Node> nls=playoutMemorys.get(s);
+				Node m=nls.get(0);
+				m.winRateCalculation();
+				double score=m.winRate[playerNum];
+				/*System.out.println("memory:"+MCTSutils.preprocess(m.state.toString())+", hasChild:"+n.hasChild(m.state));
+				System.out.println(getStateMachine().getRoles().get(playerNum)+"---Score:"+score+", visit:"+m.v);
+				System.out.println("UCT:"+uctCalculation(n,m));*/
+				if(saveScore<=score && visit<=m.v && !n.hasChild(m.state)) {
+					double last=saveScore/visit;
+					double now=score/m.v;
+					double apple=now/(last+now);
+					//System.out.println("hit:"+apple+", last:"+last+", now:"+now);
+					if(visit==0||apple>Math.random()) {
+						//System.out.println("hithithit");
+						saveScore=score;
+						saven=m;
+						visit=m.v;
+					}
+				}
+			}
+		}
+		return saven;
 	}
 
 	public void addBigramMemory(String parent,String child) {
@@ -628,6 +635,12 @@ public final class MCTSGamer extends SampleGamer
 		return false;
 	}
 
+	public String getHashCode(Node n) {
+		String str=n.state.toString();
+		str=MCTSutils.preprocess(str);
+		return MCTSutils.hash(str, 7);
+	}
+
     @Override
     public void stateMachineStop() {
         // Do nothing.
@@ -642,7 +655,7 @@ public final class MCTSGamer extends SampleGamer
 
     @Override
     public String getName() {
-        return "MCTSPlayer";
+        return "MCTSbigramPlayer";
     }
 
     @Override

@@ -69,4 +69,8 @@ public class MCTSutils {
 		return s;
 	}
 
+	public int saveCount=0;
+	public void setCount(int i) {
+		saveCount=i;
+	}
 }
