@@ -42,7 +42,7 @@ public final class MCTSGamer extends SampleGamer
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	 {
 		 StateMachine theMachine = getStateMachine();
-		 System.out.println("happy");
+		 //System.out.println("happy");
 		 initAll();
 		 totalPC=0;
 		 /*
@@ -89,7 +89,7 @@ public final class MCTSGamer extends SampleGamer
 */
 		 //System.out.println(getMatch().getMatchId());
 	        // Do nothing.
-		 System.out.println("start:::start:::start:::start:::start:::start:::start:::start:::start:::start");
+		 //System.out.println("start:::start:::start:::start:::start:::start:::start:::start:::start:::start");
 	 }
     /**
      * Employs a simple sample "Monte Carlo" algorithm.
@@ -106,10 +106,6 @@ public final class MCTSGamer extends SampleGamer
         List<Move> moves = theMachine.getLegalMoves(getCurrentState(), getRole());
         Move selection = moves.get(0);
 
-        System.out.println("!!!!!moves:"+moves);
-        if(lastNode!=null) {
-        	System.out.println(lastNode.state);
-        }
         test=0;
         Node n=new Node(getCurrentState());
         if(root==null) {
@@ -132,25 +128,25 @@ public final class MCTSGamer extends SampleGamer
         	MonteCalroPlayout(n);
        	}
         totalPC=playoutCount;
-        System.out.println("testCount:::"+testCount);
-        System.out.println((kokoko++)+"::count***"+test);
-        System.out.println("total:"+totalPC);
+        //System.out.println("testCount:::"+testCount);
+        //System.out.println((kokoko++)+"::count***"+test);
+        //System.out.println("total:"+totalPC);
 
         if (moves.size() > 1) {
         	selection=selectNextPlay(n,moves);
         }
-        System.out.println("super!!!!!!---"+selection);
+        //System.out.println("super!!!!!!---"+selection);
 
         MachineState m=getCurrentState();
         String s=m.toString();
-        System.out.println("state string:::"+s);
+        //System.out.println("state string:::"+s);
         globalDepth=n.depth+1;
         //aacshowAll(n);
 
         SampleMonteCarloGamer.pcSet(playoutCount);
 
         lastNode=n;
-        System.out.println("size::"+playoutMemorys.size());
+        //System.out.println("size::"+playoutMemorys.size());
         long stop = System.currentTimeMillis();
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         return selection;
@@ -270,7 +266,7 @@ public final class MCTSGamer extends SampleGamer
         }
     	if(testCount<testCountSub) {
     		testCount=testCountSub;
-    		System.out.println("HIT***"+testCount);
+    		//System.out.println("HIT***"+testCount);
     	}
 
     	List<Role> roleList=theMachine.getRoles();
@@ -317,7 +313,7 @@ public final class MCTSGamer extends SampleGamer
     	saveNode=que.poll();
     	Node nm=nodeSearch(root,saveNode.state);
     	if(nm==null) {
-    		System.out.println("HHHHHHHHHHHHHIIIIIIIIIIIIITTTTTTTTT");
+    		//System.out.println("HHHHHHHHHHHHHIIIIIIIIIIIIITTTTTTTTT");
     		lastNode.expand(saveNode);
     	}
     	for (Node v : que) {
@@ -366,7 +362,7 @@ public final class MCTSGamer extends SampleGamer
     	//lastNode=nodeSearch(root,bestState);
 
 
-    	System.out.println("bestKey::"+bestState);
+    	//System.out.println("bestKey::"+bestState);
 
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
         for(int i=0;i<moves.size();i++) {
@@ -384,7 +380,7 @@ public final class MCTSGamer extends SampleGamer
         	*/
 
         }
-        System.out.println(bestMove);
+        //System.out.println(bestMove);
         return bestMove;
     }
 
@@ -556,14 +552,14 @@ public final class MCTSGamer extends SampleGamer
     int globalDepth=0;
     public void showAll(Node n) {
     	if(n.depth<=globalDepth) {
-    		System.out.println("--- show all ---");
-    		System.out.println(n.state);
-    		System.out.println(MCTSutils.preprocess(n.state.toString()));
-    		System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
-    		System.out.println("w/v:::"+n.winValue[getOwnRoleNumber()]/n.v);
+    		//System.out.println("--- show all ---");
+    		//System.out.println(n.state);
+    		//System.out.println(MCTSutils.preprocess(n.state.toString()));
+    		//System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
+    		//System.out.println("w/v:::"+n.winValue[getOwnRoleNumber()]/n.v);
     	}
     	if(n.children == null){
-    		System.out.println("HIIIIT");
+    		//System.out.println("HIIIIT");
     		return;
     	}
     	int i=0;
