@@ -114,8 +114,12 @@ public final class MCTSbigramGamer extends SampleGamer
         lastNode=n;
         long stop = System.currentTimeMillis();
         System.out.println("total times:"+(stop-start));
+        System.out.println("time     out:"+timeout);
+        System.out.println("current time:"+System.currentTimeMillis());
+        if(timeout<System.currentTimeMillis())
+        	System.out.println("ERROR:::time over");
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
-        System.out.println("error count:::"+errorCount);
+        //System.out.println("error count:::"+errorCount);
         return selection;
     }
     //*time test*//
@@ -742,3 +746,5 @@ public final class MCTSbigramGamer extends SampleGamer
         // Do nothing.
     }
 }
+
+
