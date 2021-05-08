@@ -70,7 +70,11 @@ public final class MCTSbigramGamer extends SampleGamer
          * あれば、そのノードの情報を上書きする。
          */
         Node n=new Node(getCurrentState());
-        if(root==null) {
+
+    	root=n;
+    	lastNode=root;
+    	/*
+    	if(root==null) {
         	root=n;
         	lastNode=root;
         }
@@ -85,6 +89,7 @@ public final class MCTSbigramGamer extends SampleGamer
         		n=nm;
         	}
         }
+    	 */
 
         //while(System.currentTimeMillis()<finishBy) {
         for(int i=0;i<500;i++) {
@@ -118,6 +123,12 @@ public final class MCTSbigramGamer extends SampleGamer
         System.out.println("current time:"+System.currentTimeMillis());
         if(timeout<System.currentTimeMillis())
         	System.out.println("ERROR:::time over");
+        showAllCount=0;
+        showAll(root);
+        System.out.println("show all count;;;"+showAllCount);
+        System.out.println(MCTSutils.preprocess(n.state.toString()));
+    	System.out.println("regal  moves:"+moves);
+    	System.out.println("select moves:"+selection);
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         //System.out.println("error count:::"+errorCount);
         return selection;
@@ -388,7 +399,7 @@ public final class MCTSbigramGamer extends SampleGamer
     public double uctCalculation(Node parent,Node child) {
     	double logVisitedValue=Math.log(parent.v);
     	double searchValue=0;
-    	double C=0.7;
+    	double C=0.3;
 
     	if(child.v!=0) {
     		searchValue=Math.sqrt(logVisitedValue/child.v);
@@ -521,14 +532,19 @@ public final class MCTSbigramGamer extends SampleGamer
      * Print all of Nodes in constructed tree.
      */
     int globalDepth=0;
+    int showAllCount=0;
     public void showAll(Node n) {
+    	showAllCount++;
+    	/*
     	if(n.depth<=globalDepth) {
+
     		System.out.println("--- show all ---");
     		System.out.println(n.state);
-    		System.out.println(MCTSutils.preprocess(n.state.toString()));
+    	  	System.out.println(MCTSutils.preprocess(n.state.toString()));
     		System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
     		System.out.println("w/v:::"+n.winValue[getOwnRoleNumber()]/n.v);
     	}
+    	*/
     	if(n.children == null){
     		System.out.println("HIIIIT");
     		return;
@@ -550,11 +566,11 @@ public final class MCTSbigramGamer extends SampleGamer
 
 	/*
 	 * If the argument hash has not been registered in playout memory,
-	 * registered hash and Node form argument in playout memory.
+	 * registered hash and Node from argument in playout memory.
 	 * If the argument hash has already been registered in playout memory and
 	 * the argument Node has also been registered in it,
 	 * update the memory same as the argument,
-	 * else the hash and Node form argument is registered in playout memory.
+	 * else the hash and Node from argument is registered in playout memory.
 	 */
 	public void addPlayoutMemorys(long hash,Node n,int[] goalScore) {
 		Node m=new Node(n.state);
@@ -683,16 +699,17 @@ public final class MCTSbigramGamer extends SampleGamer
 	/*
 	 * Return true if argument Node has been already registered in playout memory.
 	 */
-	public boolean hitPlayoutMemory(Node n) {
+
+	public Node searchPlayoutMemory(Node n) {
 		for(long s:playoutMemorys.keySet()){
     		ArrayList<Node> ls=playoutMemorys.get(s);
     		for(Node m:ls) {
     			if(m.state.equals(n.state)) {
-    				return true;
+    				return m;
     			}
     		}
     	}
-		return false;
+		return null;
 	}
 	/*
 	 * Return the hash as Long type which is converted from the argument.

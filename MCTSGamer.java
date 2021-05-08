@@ -108,6 +108,8 @@ public final class MCTSGamer extends SampleGamer
 
         test=0;
         Node n=new Node(getCurrentState());
+        root=n;
+        /*
         if(root==null) {
         	root=n;
         }
@@ -117,6 +119,7 @@ public final class MCTSGamer extends SampleGamer
         		n=nm;
         	}
         }
+        */
         int appleCount=0;
 //        while(appleCount<100) {
   //      	appleCount++;

@@ -75,6 +75,7 @@ public class MCTSutils {
 		return result;
 
 	}
+
 	public static void testPrint(int[] a) {
 		for(int i=0;i<a.length;i++) {
 			System.out.println(i+":"+a[i]);
