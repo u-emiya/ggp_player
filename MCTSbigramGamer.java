@@ -56,11 +56,7 @@ public final class MCTSbigramGamer extends SampleGamer
         long start = System.currentTimeMillis();
         long finishBy = timeout - 1000;
         System.out.println("time:"+(finishBy-start));
-        initTimeArgument();//*time test
 
-        if(lastNode!=null) {
-        	System.out.println(lastNode.state);
-        }
         //removePlayoutMemory();
 
         /*
@@ -95,13 +91,7 @@ public final class MCTSbigramGamer extends SampleGamer
         for(int i=0;i<500;i++) {
         	MonteCalroPlayout(n);
        	}
-        double sb=secondBlockTime/st;
-        double tb=thirdBlockTime/tt;
-    	System.out.println("second:::times-"+st+", block-"+sb);
-    	System.out.println("third::::times-"+tt+", block-"+tb);
 
-        System.out.println("testCount:::"+testCount);
-        System.out.println((kokoko++)+"::count***");
 
         /*
          * movesが複数の要素を持つ場合は、次の手を選択するためにselectNectPlayメソッドを使用する。
@@ -113,38 +103,19 @@ public final class MCTSbigramGamer extends SampleGamer
         if (moves.size() > 1) {
         	selection=selectNextPlay(n,moves);
         }
-        System.out.println("super!!!!!!---"+selection);
         globalDepth=n.depth+1;
 
         lastNode=n;
         long stop = System.currentTimeMillis();
-        System.out.println("total times:"+(stop-start));
-        System.out.println("time     out:"+timeout);
-        System.out.println("current time:"+System.currentTimeMillis());
-        if(timeout<System.currentTimeMillis())
-        	System.out.println("ERROR:::time over");
         showAllCount=0;
-        showAll(root);
-        System.out.println("show all count;;;"+showAllCount);
+        //showAll(root);
+        //System.out.println("show all count;;;"+showAllCount);
         System.out.println(MCTSutils.preprocess(n.state.toString()));
     	System.out.println("regal  moves:"+moves);
     	System.out.println("select moves:"+selection);
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         //System.out.println("error count:::"+errorCount);
         return selection;
-    }
-    //*time test*//
-    public long firstBlockTime=0;
-    public long secondBlockTime=0;
-    public int st=0;
-    public long thirdBlockTime=0;
-    public int tt=0;
-    public void initTimeArgument() {
-    	firstBlockTime=0;
-        secondBlockTime=0;
-        thirdBlockTime=0;
-        st=0;
-        tt=0;
     }
 
     public int totalPlayerNumber;//total number of players
@@ -285,11 +256,7 @@ public final class MCTSbigramGamer extends SampleGamer
     	 * nodeSearchメソッドで構築している木にあるか参照し、なかったら拡張して参照を終了する。
     	 */
     	saveNode=que.poll();
-    	long beforeTime=System.currentTimeMillis();
     	Node nm=nodeSearch(root,saveNode.state);//*taking time
-    	long afterTime=System.currentTimeMillis();
-    	secondBlockTime+=(afterTime-beforeTime);
-    	st++;
 
     	//Node nm=nodeSearch(lastNode,saveNode.state);
     	if(nm==null) {
@@ -299,12 +266,8 @@ public final class MCTSbigramGamer extends SampleGamer
     		return;
     	}
     	for (Node v : que) {
-    		beforeTime=System.currentTimeMillis();
     		Node ns=nodeSearch(root,v.state);//*taking time
-        	afterTime=System.currentTimeMillis();
 
-        	thirdBlockTime+=(afterTime-beforeTime);
-        	tt++;
 
 
     		//Node ns=nodeSearch(n,v.state);
@@ -368,7 +331,7 @@ public final class MCTSbigramGamer extends SampleGamer
     		for(MachineState key:n.children.keySet()) {
     			Node child=n.children.get(key);
     			double uctValue=uctCalculation(n,child);
-    			if(uctValue>saveValue) {
+    			if(uctValue>saveValue || selectNode==null) {
     				saveValue=uctValue;
     				selectNode=child;
     			}
@@ -377,6 +340,7 @@ public final class MCTSbigramGamer extends SampleGamer
     		MachineState state=getUnexploredNextState(n);
     		selectNode=new Node(state);
     	}
+
     	return selectNode;
 
     }

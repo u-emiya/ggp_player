@@ -399,7 +399,7 @@ public final class MCTSGamer extends SampleGamer
     			Node child=n.children.get(key);
     			double uctValue=uctCalculation(n,child);
     			testLs.add(uctValue);
-    			if(uctValue>saveValue) {
+    			if(uctValue>saveValue|| selectNode==null) {
     				saveValue=uctValue;
     				selectNode=child;
     			}
