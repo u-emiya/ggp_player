@@ -23,19 +23,6 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-/**
- * SampleMonteCarloGamer is a simple state-machine-based Gamer. It will use a
- * pure Monte Carlo approach towards picking moves, doing simulations and then
- * choosing the move that has the highest expected score. It should be slightly
- * more challenging than the RandomGamer, while still playing reasonably fast.
- *
- * However, right now it isn't challenging at all. It's extremely mediocre, and
- * doesn't even block obvious one-move wins. This is partially due to the speed
- * of the default state machine (which is slow) and mostly due to the algorithm
- * assuming that the opponent plays completely randomly, which is inaccurate.
- *
- * @author Sam Schreiber
- */
 public final class MCTSbigramGamer extends SampleGamer
 {
 	 @Override
@@ -43,6 +30,8 @@ public final class MCTSbigramGamer extends SampleGamer
 	 {
 		 initAll();
 		 System.out.println("start:::start:::start:::start:::start:::start:::start:::start:::start:::start");
+		 StateMachine theMachine = getStateMachine();
+		 System.out.println(getMatch().getGame().getRules());
 	 }
     /**
      * Employs a simple sample "Monte Carlo" algorithm.
@@ -55,8 +44,8 @@ public final class MCTSbigramGamer extends SampleGamer
         StateMachine theMachine = getStateMachine();
         long start = System.currentTimeMillis();
         long finishBy = timeout - 1000;
-        System.out.println("time:"+(finishBy-start));
-
+        turn++;
+        System.out.println("●----"+turn+"----●");
         //removePlayoutMemory();
 
         /*
@@ -86,9 +75,10 @@ public final class MCTSbigramGamer extends SampleGamer
         	}
         }
     	 */
-
+    	int playCount=0;
         //while(System.currentTimeMillis()<finishBy) {
         for(int i=0;i<500;i++) {
+        	playCount++;
         	MonteCalroPlayout(n);
        	}
 
@@ -110,9 +100,29 @@ public final class MCTSbigramGamer extends SampleGamer
         showAllCount=0;
         //showAll(root);
         //System.out.println("show all count;;;"+showAllCount);
+        System.out.println(n.state.toString());
         System.out.println(MCTSutils.preprocess(n.state.toString()));
     	System.out.println("regal  moves:"+moves);
     	System.out.println("select moves:"+selection);
+    	System.out.println("times of select playout memory:"+testCount);
+    	double percent=(double)testCount/(double)supertest;
+    	System.out.println(supertest+"---testCount percentage::"+percent);
+    	System.out.println("total state number::"+totalStateNumber);
+    	System.out.println("acchived in ipsilon process::"+playoutMemorys.size());
+    	int pmcount=0;
+    	for(long s:playoutMemorys.keySet()) {
+			ArrayList<Node> nls=playoutMemorys.get(s);
+			for(int i=0;i<nls.size();i++) {
+				pmcount++;
+	    	}
+    	}
+      	System.out.println("acchived in ipsilon process::"+pmcount);
+      	System.out.println("play count:"+playCount);
+    	testCount=0;
+    	supertest=0;
+    	realSerect=0;
+    	totalStateNumber=0;
+    	System.out.println();
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         //System.out.println("error count:::"+errorCount);
         return selection;
@@ -197,7 +207,10 @@ public final class MCTSbigramGamer extends SampleGamer
 
     public int apple=40;
     public int testCount=0;
+    public int realSerect=0;
     public int supertest=0;
+    public int totalStateNumber=0;
+    public int turn=0;
     public Node lastNode=null; //前回の盤面情報
     public int errorCount=0;
 
@@ -218,6 +231,7 @@ public final class MCTSbigramGamer extends SampleGamer
     		state=node.getState();
       	   	que.add(node);
       		playerNum=(playerNum+1)%(theMachine.getRoles().size());
+      		totalStateNumber++;
      	}
 
 
@@ -363,7 +377,7 @@ public final class MCTSbigramGamer extends SampleGamer
     public double uctCalculation(Node parent,Node child) {
     	double logVisitedValue=Math.log(parent.v);
     	double searchValue=0;
-    	double C=0.3;
+    	double C=0.7;
 
     	if(child.v!=0) {
     		searchValue=Math.sqrt(logVisitedValue/child.v);
@@ -404,12 +418,14 @@ public final class MCTSbigramGamer extends SampleGamer
     	StateMachine theMachine = getStateMachine();
     	 MachineState nextState;
 
-
+    	 supertest++;
     	  //part of select playout memory
     	 Node nm=selectPlayoutMemory(n);
     	 if(nm!=null) {
+    		 testCount++;
         	 if(ipsilonGreedy()) {
-        			 return nm.state;
+        		 	realSerect++;
+        		 	return nm.state;
         	 }
     	 }
 
@@ -689,7 +705,7 @@ public final class MCTSbigramGamer extends SampleGamer
 	 */
 	public boolean ipsilonGreedy() {
 		double rnd=Math.random();
-		double ipsilon=0.7;
+		double ipsilon=0.2;
 		if((1-ipsilon)>rnd)
 			return true;
 		return false;

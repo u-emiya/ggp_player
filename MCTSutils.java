@@ -2,6 +2,7 @@ package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 
 public class MCTSutils {
 
@@ -83,17 +84,19 @@ public class MCTSutils {
 	}
 
 	public static String preprocess(String str) {
-		str=str.replace("true", "").replace(" ", "").replace("cell", "");
+		str=str.replace("true", "");//.replace(" ", "");//.replace("cell", "");
 		char[] c =str.toCharArray();
 		String s="";
 		ArrayList<String> ls=new ArrayList<String>();
 		for(int i=0;i<c.length;i++) {
 			if(c[i]=='(') {
+				while(c[i++]=='(');
 				int j;
-				for(j=i+2;c[j]!=')';j++) {
+				for(j=i+1;c[j]!=')';j++) {
 					s+=c[j];
 				}
-				//s+=c[j];
+				s+=c[j];
+
 				ls.add(s);
 				s="";
 				i=j;
@@ -103,18 +106,193 @@ public class MCTSutils {
 		Collections.sort(ls);
 
 		for(String apple:ls) {
-			if(apple.contains("step")||apple.contains("control"))
-				continue;
 			s+=apple;
-
 		}
 
 
 		return s;
 	}
 
-	public int saveCount=0;
-	public void setCount(int i) {
-		saveCount=i;
+
+
+	public static String pressRoleString(String str,Map<String,String> map,Map<String,Integer> appearMap) {
+		char[] c =str.toCharArray();
+		String s="";
+		ArrayList<String> ls=new ArrayList<String>();
+		for(int i=0;i<c.length;i++) {
+			if(c[i]=='(') {
+				int j;
+				for(j=i;c[j]!=')';j++) {
+					s+=c[j];
+				}
+				s+=c[j];
+				String[] array=s.split(" ");
+				s="";
+				for(int k=0;k<array.length;k++) {
+					if(k==1)
+						continue;
+					if(1<k && k<array.length-1) {
+						int begin=0;
+						String ccc="";
+						boolean flag=false;
+						while(begin<array[k].length()) {
+							ccc=array[k].substring(begin,begin+1);
+							if(!map.containsKey(ccc)) {
+								map.put(ccc,array[k]);
+								appearMap.put(ccc,1);
+								flag=true;
+								break;
+							}else {
+								if(array[k].equals(map.get(ccc))) {
+									int count=appearMap.get(ccc);
+									appearMap.put(ccc,count+1);
+									flag=true;
+									break;
+								}
+							}
+							begin++;
+						}
+						if(flag)
+							array[k]=ccc;
+
+					}
+
+					s+=array[k];
+					if(1<k && k<array.length-2)
+						s+=",";
+
+
+				}
+				ls.add(s);
+				s="";
+				i=j;
+			}
+		}
+
+		for(String apple:ls) {
+			s+=apple;
+
+		}
+		return s;
 	}
+
+	public static void searchBoardSize(String str,int[] xy) {
+		char c[]=str.toCharArray();
+		String s="";
+		int maxX=xy[0],maxY=xy[1];
+		int minX=xy[2],minY=xy[3];
+		for(int i=0;i<c.length;i++) {
+			if(c[i]=='(') {
+				int j;
+				for(j=i+2;c[j]!=')';j++) {
+					s+=c[j];
+				}
+				//s+=c[j];
+				String[] array=s.split(" ");
+				s="";
+				//System.out.println("----");
+				/*
+				for(int m=0;m<array.length;m++) {
+					System.out.println(array[m]);
+				}*/
+				if(array.length==4) {
+					int x=Integer.valueOf(array[1]).intValue();
+					if(maxX<x) {
+						maxX=x;
+					}
+					int y=Integer.valueOf(array[2]).intValue();
+					if(maxY<y) {
+						maxY=y;
+					}
+					if(minX>x) {
+						minX=x;
+					}
+					if(minY>y) {
+						minY=y;
+					}
+				}
+			}
+		}
+		//System.out.println("max x---"+maxX+", max Y---"+maxY);
+		xy[0]=maxX;
+		xy[1]=maxY;
+		xy[2]=minX;
+		xy[3]=minY;
+	}
+
+	public static String encodeHaffman(String state,Map<String,String> map) {
+		char c[]=state.toCharArray();
+		String result="",str="";
+		for(int i=0;i<c.length;i++) {
+			str+=map.get(String.valueOf(c[i]));
+			if(str.length()>4) {
+				String binary=str.substring(0,4);
+				result+=Integer.toHexString(Integer.parseInt(binary, 2));
+				str=str.substring(4);
+			}
+		}
+		if(str.length()>0) {
+			for(int i=str.length();i<4;i++)
+				str+="0";
+			result+=Integer.toHexString(Integer.parseInt(str, 2));
+		}
+		return result;
+	}
+
+	public static String makePerfectBoard(String state,int[] boardRange) {
+		char c[]=state.toCharArray();
+		String result="";
+		int x=boardRange[2],y=boardRange[3]-1;
+		for(int i=0;i<c.length;i++) {
+
+			String s="";
+			int j=0;
+			if(c[i]=='(') {
+				for(j=i+1;c[j]!=')';j++) {
+					s+=c[j];
+				}
+			}
+			String[] array=s.split(",");
+			if(array.length==1) {
+				if(boardRange[2]<=x && x<=boardRange[0] && boardRange[3]<=y && y<=boardRange[1]) {
+					result+="¥";
+					i--;
+					y++;
+					//continue;
+				}else {
+					result+=array[0];
+					i=j;
+				}
+			}
+			else if(array.length==3) {
+				if(y<boardRange[3])
+					y++;
+				if(x==Integer.valueOf(array[0]).intValue() && y==Integer.valueOf(array[1]).intValue()) {
+					result+=array[2];
+					i=j;
+					y++;
+				}
+				else {
+					result+="¥";
+					y++;
+					i--;
+				}
+			}
+			if(y>boardRange[1]) {
+				y=boardRange[3];
+				x++;
+			}
+			if(x>boardRange[0]&&i+1>c.length)
+				break;
+		}
+		if(y<boardRange[3]) {
+			for(int j=boardRange[3];j<=boardRange[1];j++) {
+				for(int i=boardRange[2];i<=boardRange[0];i++) {
+					result+="¥";
+				}
+			}
+		}
+		return result;
+	}
+
 }
