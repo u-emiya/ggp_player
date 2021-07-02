@@ -220,6 +220,7 @@ public class MCTSutils {
 		xy[3]=minY;
 	}
 
+
 	public static String encodeHaffman(String state,Map<String,String> map) {
 		char c[]=state.toCharArray();
 		String result="",str="";
@@ -227,14 +228,16 @@ public class MCTSutils {
 			str+=map.get(String.valueOf(c[i]));
 			if(str.length()>4) {
 				String binary=str.substring(0,4);
-				result+=Integer.toHexString(Integer.parseInt(binary, 2));
+				//result+=Integer.toHexString(Integer.parseInt(binary, 2));
+				result+=binary;
 				str=str.substring(4);
 			}
 		}
 		if(str.length()>0) {
 			for(int i=str.length();i<4;i++)
 				str+="0";
-			result+=Integer.toHexString(Integer.parseInt(str, 2));
+		//	result+=Integer.toHexString(Integer.parseInt(str, 2));
+			result+=str;
 		}
 		return result;
 	}

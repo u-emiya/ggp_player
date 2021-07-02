@@ -1,7 +1,12 @@
 package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class Huffman {
 	public class node{
@@ -52,9 +57,20 @@ public class Huffman {
 	public node makeNode(Map<String,Integer> map) {
 		node head=null;
 		node tail=null;
-		for(String s:map.keySet()) {
-			 int value=map.get(s);
-			 node n=newNode(s.toCharArray()[0]);
+
+		List<Map.Entry> mapValuesList = new ArrayList<Map.Entry>(map.entrySet());
+		Collections.sort(mapValuesList, new Comparator<Map.Entry>() {
+		  @Override
+		  public int compare(Entry entry1, Entry entry2) {
+		    return ((Integer) entry1.getValue()).compareTo((Integer) entry2.getValue());
+		  }
+		});
+
+
+		 for (Entry s : mapValuesList) {
+			 int value=(int) s.getValue();
+			 String a=s.getKey().toString();
+			 node n=newNode(a.toCharArray()[0]);
 			 n.times=value;
 			 if(head==null) {
 				head=n;
