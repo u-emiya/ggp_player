@@ -128,6 +128,18 @@ public class MCTSutils {
 				s+=c[j];
 				String[] array=s.split(" ");
 				s="";
+
+				if(array.length==4) {
+					boolean isNumeric=true;
+					for (int m = 0; m < array[2].length(); m++) {
+			            if (!Character.isDigit(array[2].charAt(m))) {
+			                isNumeric=false;
+			            }
+			        }
+					if(isNumeric)
+						continue;
+				}
+
 				for(int k=0;k<array.length;k++) {
 					if(k==1)
 						continue;
@@ -170,6 +182,11 @@ public class MCTSutils {
 		}
 
 		for(String apple:ls) {
+			if(apple.length()==3) {
+				char num=apple.charAt(1);
+				if('0'<=num && num<='9')
+					continue;
+			}
 			s+=apple;
 
 		}
@@ -233,9 +250,10 @@ public class MCTSutils {
 				str=str.substring(4);
 			}
 		}
+
 		if(str.length()>0) {
-			for(int i=str.length();i<4;i++)
-				str+="0";
+			//for(int i=str.length();i<4;i++)
+			//str+="0";
 		//	result+=Integer.toHexString(Integer.parseInt(str, 2));
 			result+=str;
 		}
@@ -288,13 +306,16 @@ public class MCTSutils {
 			if(x>boardRange[0]&&i+1>c.length)
 				break;
 		}
-		if(y<boardRange[3]) {
-			for(int j=boardRange[3];j<=boardRange[1];j++) {
-				for(int i=boardRange[2];i<=boardRange[0];i++) {
+
+		if(y<boardRange[1]) {
+			for(int i=x;i<=boardRange[0];i++) {
+				for(int j=y;j<=boardRange[1];j++) {
 					result+="¥";
 				}
+				y=1;
 			}
 		}
+
 		return result;
 	}
 

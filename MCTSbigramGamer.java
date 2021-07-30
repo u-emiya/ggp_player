@@ -44,6 +44,7 @@ public final class MCTSbigramGamer extends SampleGamer
         StateMachine theMachine = getStateMachine();
         long start = System.currentTimeMillis();
         long finishBy = timeout - 1000;
+        //initAll();//test0722
         turn++;
         System.out.println("●----"+turn+"----●");
         //removePlayoutMemory();
@@ -80,7 +81,11 @@ public final class MCTSbigramGamer extends SampleGamer
         	playCount++;
         	MonteCalroPlayout(n);
        	}
-
+        //test0722
+        for(MachineState childState:n.children.keySet()) {
+        	System.out.println(childState);
+        	System.out.println("visit times:"+n.children.get(childState).v);
+        }
 
         /*
          * movesが複数の要素を持つ場合は、次の手を選択するためにselectNectPlayメソッドを使用する。
@@ -97,8 +102,6 @@ public final class MCTSbigramGamer extends SampleGamer
         lastNode=n;
         long stop = System.currentTimeMillis();
         showAllCount=0;
-        //showAll(root);
-        //System.out.println("show all count;;;"+showAllCount);
         System.out.println(n.state.toString());
         System.out.println(MCTSutils.preprocess(n.state.toString()));
     	System.out.println("regal  moves:"+moves);
@@ -118,13 +121,36 @@ public final class MCTSbigramGamer extends SampleGamer
     	}
       	System.out.println("acchived in ipsilon process::"+pmcount);
       	System.out.println("play count:"+playCount);
-    	testCount=0;
+      	System.out.println("test count:"+testCount);
+      	System.out.println("real serect:"+realSerect);
+      	showAll(root);
+        System.out.println("show all count;;;"+showAllCount);
+        System.out.println(getOwnRoleNumber()+"--node count;;;"+nodeCount);
+        testCount=0;
     	supertest=0;
     	realSerect=0;
     	totalStateNumber=0;
     	System.out.println();
+    	//test0722
+    	/*
+    	List<Entry<MachineState, Integer>> list_entries = new ArrayList<Entry<MachineState, Integer>>(testMap.entrySet());
+        // 3.比較関数Comparatorを使用してMap.Entryの値を比較する(昇順)
+        Collections.sort(list_entries, new Comparator<Entry<MachineState, Integer>>() {
+            @Override
+			public int compare(Entry<MachineState, Integer> obj1, Entry<MachineState, Integer> obj2) {
+                // 4. 昇順
+                return obj1.getValue().compareTo(obj2.getValue());
+            }
+        });
+
+        System.out.println("昇順でのソート");
+        // 5. ループで要素順に値を取得する
+        for(Entry<MachineState, Integer> entry : list_entries) {
+            System.out.println(MCTSutils.preprocess(entry.getKey().toString()) + " : " + entry.getValue());
+        }
+    	System.out.println();
+    	*/
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
-        //System.out.println("error count:::"+errorCount);
         return selection;
     }
 
@@ -424,6 +450,13 @@ public final class MCTSbigramGamer extends SampleGamer
     	 if(nm!=null) {
     		 testCount++;
         	 if(ipsilonGreedy()) {
+        		 	//test0722
+        		 	/*
+        		 	if(testMap.containsKey(nm.state)) {
+        		 		testMap.put(nm.state,testMap.get(nm.state)+1);
+        		 	}else {
+        		 		testMap.put(nm.state,1);
+        		 	}*/
         		 	realSerect++;
         		 	return nm.state;
         	 }
@@ -513,10 +546,12 @@ public final class MCTSbigramGamer extends SampleGamer
      */
     int globalDepth=0;
     int showAllCount=0;
+    int nodeCount=0;
     public void showAll(Node n) {
     	showAllCount++;
     	/*
     	if(n.depth<=globalDepth) {
+
     		System.out.println("--- show all ---");
     		System.out.println(n.state);
     	  	System.out.println(MCTSutils.preprocess(n.state.toString()));
@@ -525,13 +560,13 @@ public final class MCTSbigramGamer extends SampleGamer
     	}
     	*/
     	if(n.children == null){
-    		System.out.println("HIIIIT");
     		return;
     	}
     	for(MachineState key:n.children.keySet()){
     		//System.out.println("times of i ==== "+i++);
     		Node next=n.children.get(key);
     		//nxt.printItem(nxt.list);
+    		nodeCount++;
     		showAll(next);
     	}
     }
@@ -542,7 +577,8 @@ public final class MCTSbigramGamer extends SampleGamer
 	Map<Long,ArrayList<Node>> playoutMemorys = new HashMap<>();
     //key---parent,value---child
 	Map<Long,ArrayList<Long>> bigramMemory = new HashMap<>();
-
+	//test 0722
+	Map<MachineState,Integer> testMap= new HashMap<>();
 	/*
 	 * If the argument hash has not been registered in playout memory,
 	 * registered hash and Node from argument in playout memory.
@@ -625,6 +661,10 @@ public final class MCTSbigramGamer extends SampleGamer
 						System.out.println("hafouhaouvhoafuh");
 					}
 					System.out.println();
+				}else {
+					//System.out.println("parent:"+MCTSutils.preprocess(n.state.toString()));
+					//System.out.println("child:"+MCTSutils.preprocess(nls.get(0).state.toString()));
+					//System.out.println();
 				}
 				for(Node m:nls) {
 					if(n.hasChild(m.state) || !isNextState(n.state,m.state)) {
@@ -700,11 +740,11 @@ public final class MCTSbigramGamer extends SampleGamer
 	}
 
 	/*
-	 * Return true following epsilon greedy method.
+	 * Return true following espsilon greedy method.
 	 */
 	public boolean ipsilonGreedy() {
 		double rnd=Math.random();
-		double ipsilon=0.2;
+		double ipsilon=0.7;
 		if((1-ipsilon)>rnd)
 			return true;
 		return false;

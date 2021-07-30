@@ -77,6 +77,12 @@ public final class MCTSGamerV2 extends SampleGamer
         for(int i=0;i<500;i++) {
         	MonteCalroPlayout(n);
        	}
+        //test0722
+        System.out.println("MCTSGamerV2");
+        for(MachineState childState:n.children.keySet()) {
+        	System.out.println(childState);
+        	System.out.println("visit times:"+n.children.get(childState).v);
+        }
 
 
         /*
@@ -94,8 +100,20 @@ public final class MCTSGamerV2 extends SampleGamer
         lastNode=n;
         long stop = System.currentTimeMillis();
         showAllCount=0;
-        //showAll(root);
-        //System.out.println("show all count;;;"+showAllCount);
+        nodeCount=0;
+        showAll(root);
+        System.out.println("--- "+kokoko+" turn ----");
+        System.out.println(getOwnRoleNumber()+"--show all count;;;"+showAllCount);
+        System.out.println(getOwnRoleNumber()+"--nsnull count;;;"+nsnull);
+        System.out.println(getOwnRoleNumber()+"--notnsnull count;;;"+notnsnull);
+        System.out.println(getOwnRoleNumber()+"--node count;;;"+nodeCount);
+        System.out.println(getOwnRoleNumber()+"--expand count;;;"+expandCount);
+
+        expandCount=0;
+        nsnull=0;
+        notnsnull=0;
+        System.out.println("");
+        kokoko++;
         testCount=0;
     	supertest=0;
     	notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
@@ -163,6 +181,7 @@ public final class MCTSGamerV2 extends SampleGamer
     	}
 
     	public void expand(Node n){
+    		expandCount++;
     	    this.children.put(n.state,n);
     	}
 
@@ -248,23 +267,36 @@ public final class MCTSGamerV2 extends SampleGamer
     	for (Node v : que) {
     		Node ns=nodeSearch(root,v.state);//*taking time
 
-
-
     		//Node ns=nodeSearch(n,v.state);
     		/*
     		 * 一つ目のif文は、構築している木にない場合の拡張
     		 * 二つ目のif文は、構築している木には存在するが、親子関係が成立していない場合の拡張
     		 */
     		if( ns==null) {
+    			nsnull++;
     			saveNode.expand(v);
         		break;
     		}else if(!saveNode.hasChild(v.state)) {
+    			notnsnull++;
     			saveNode.expand(ns);
         		break;
     		}
     		saveNode=ns;
     	}
 
+    	//System.out.println("--- select next play ---");
+    	for(MachineState key:n.children.keySet()) {
+    		Node child=n.children.get(key);
+    		child.winRateCalculation();
+    		if(child.winRate[getOwnRoleNumber()]>1.0) {
+    			System.out.println(MCTSutils.preprocess(key.toString()));
+    			System.out.println("child.v:"+child.v);
+    			System.out.println("win value:"+child.winValue[getOwnRoleNumber()]);
+    			System.out.println("winRate:"+child.winRate[getOwnRoleNumber()]);
+    			System.out.println();
+    		}
+
+    	}
     	return;
     }
     /*
@@ -477,6 +509,10 @@ public final class MCTSGamerV2 extends SampleGamer
      */
     int globalDepth=0;
     int showAllCount=0;
+    int nodeCount=0;
+    int expandCount=0;
+    int nsnull=0;
+    int notnsnull=0;
     public void showAll(Node n) {
     	showAllCount++;
     	/*
@@ -496,6 +532,7 @@ public final class MCTSGamerV2 extends SampleGamer
     		//System.out.println("times of i ==== "+i++);
     		Node next=n.children.get(key);
     		//nxt.printItem(nxt.list);
+    		nodeCount++;
     		showAll(next);
     	}
     }

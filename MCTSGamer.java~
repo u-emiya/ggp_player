@@ -415,7 +415,7 @@ public final class MCTSGamer extends SampleGamer
     public double uctCalculation(Node parent,Node child) {
     	double logVisitedValue=Math.log(parent.v);
     	double searchValue=0;
-    	double C=1.4142;
+    	double C=0.7;
 
     	if(child.v!=0) {
     		searchValue=Math.sqrt(logVisitedValue/child.v);

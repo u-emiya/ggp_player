@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Random;
 
 import org.ggp.base.apps.player.detail.DetailPanel;
 import org.ggp.base.apps.player.detail.SimpleDetailPanel;
@@ -25,10 +24,12 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-public final class HuffmanGamer extends SampleGamer
+public final class HuffmanAppleGamer extends SampleGamer
 {
 	int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
 	 Map<String,String> haffmanHashMap=new HashMap<>();
+	 Map<String,String> wardToCharMap=new HashMap<>();
+	 Map<String,Integer> appearMap=new HashMap<>();
 
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -39,40 +40,52 @@ public final class HuffmanGamer extends SampleGamer
 		 //System.out.println(getMatch().getGame().getRules());
 		 MCTSutils mu=new MCTSutils();
 		 Huffman hf=new Huffman();
-
-		 Map<String,String> wardToCharMap=new HashMap<>();
-		 Map<String,Integer> appearMap=new HashMap<>();
+		 //initAll();//test0722
+		 //Map<String,String> wardToCharMap=new HashMap<>();
+		 //Map<String,Integer> appearMap=new HashMap<>();
 		 int i=0;
 		 int[] depth=new int[1];
 		 while(i<500) {
 			 MachineState finalState=theMachine.performDepthCharge(getCurrentState(), depth);
 			 String state=mu.preprocess(finalState.toString());
 			 mu.searchBoardSize(state, boardSize);
-			 mu.pressRoleString(state, wardToCharMap,appearMap);
+			 String ss=mu.pressRoleString(state, wardToCharMap,appearMap);
+			 //System.out.println(ss);
 			 i++;
 		 }
 		 int max=boardSize[0];
 		 if(max<boardSize[1])
 			 max=boardSize[1];
 		 for(i=0;i<max+1;i++) {
-			 if(wardToCharMap.containsKey(Integer.toString(i)))
+		 //for(i=0;i<10;i++) {
+			 if(wardToCharMap.containsKey(Integer.toString(i))) {
 				 appearMap.remove(Integer.toString(i));
+				 wardToCharMap.remove(Integer.toString(i));
+			 }
 		 }
 		 int total=0;
 		 for(String ccc:appearMap.keySet()) {
 			 total+=appearMap.get(ccc);
 		 }
 		 total=500*boardSize[0]*boardSize[1]-total;
-		 System.out.println("¥:"+total);
 		 appearMap.put("¥",total);
+		 System.out.println("all of appear map");
 		 for(String ccc:appearMap.keySet()) {
 			 System.out.println(ccc+"::"+appearMap.get(ccc));
 		 }
+
+		 System.out.println("all of ward to char map");
+		 for(String ccc:wardToCharMap.keySet()) {
+			 System.out.println(ccc+"::"+wardToCharMap.get(ccc));
+		 }
+
 		 node nnn=hf.makeNode(appearMap);
 		 hf.makeHuffmanTree(nnn);
 		 haffmanHashMap=hf.takeHaffmanHash(hf.makeHuffmanCode(nnn));
+
+		 System.out.println("all of huffman hash map");
 		 for(String s:haffmanHashMap.keySet()) {
-			 System.out.println(s+":::"+haffmanHashMap.get(s));
+			 System.out.println(wardToCharMap.get(s)+":::"+s+"---"+haffmanHashMap.get(s));
 		 }
 
 
@@ -80,8 +93,8 @@ public final class HuffmanGamer extends SampleGamer
     /**
      * Employs a simple sample "Monte Carlo" algorithm.
      */
-	 int testApple=0;
-	 int testBanana=0;
+	 int kokoko=0;
+
     @Override
     public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
     {
@@ -93,7 +106,7 @@ public final class HuffmanGamer extends SampleGamer
         System.out.println(getCurrentState());
         System.out.println(makeHuffmanCode(getCurrentState().toString()));
         //removePlayoutMemory();
-
+        //initAll();//0723
         /*
          * 現在の盤面状態からノードnを作り、
          * rootノードがnull、つまり一番初めの時にはrootノードにnを代入する
@@ -109,19 +122,14 @@ public final class HuffmanGamer extends SampleGamer
         for(int i=0;i<500;i++) {
         	playCount++;
         	MonteCalroPlayout(n);
-        	if(testApple<0) {
-        		for(Long key:splitHuffmanHash.keySet()) {
-        			Node nnn=splitHuffmanHash.get(key);
-        			System.out.println("key:"+key+"---binary:"+Long.toBinaryString(key));
-        			System.out.println("win:"+nnn.winValue[0]);
-        			System.out.println("visit:"+nnn.v);
-        		}
-        	}
-
-        	testApple++;
+        	//System.out.println(playCount);
        	}
-
-
+        //test0722
+        System.out.println("HuffmanGamer");
+        for(MachineState childState:n.children.keySet()) {
+        	System.out.println(childState);
+        	System.out.println("visit times:"+n.children.get(childState).v);
+        }
 
         /*
          * movesが複数の要素を持つ場合は、次の手を選択するためにselectNectPlayメソッドを使用する。
@@ -137,9 +145,6 @@ public final class HuffmanGamer extends SampleGamer
 
         lastNode=n;
         long stop = System.currentTimeMillis();
-        showAllCount=0;
-        //showAll(root);
-        //System.out.println("show all count;;;"+showAllCount);
         System.out.println(n.state.toString());
         System.out.println(MCTSutils.preprocess(n.state.toString()));
     	System.out.println("regal  moves:"+moves);
@@ -164,62 +169,39 @@ public final class HuffmanGamer extends SampleGamer
     	supertest=0;
     	realSerect=0;
     	totalStateNumber=0;
-
+    	/*
     	System.out.println("all of huffman");
     	for(long s:huffmanMemorys.keySet()) {
 			huffmanSet hs=huffmanMemorys.get(s);
 			Node apple=hs.n;
 			System.out.println("key--"+s);
-			System.out.println("state:"+MCTSutils.preprocess(apple.getState().toString()));
-			System.out.println(makeHuffmanCode(apple.getState().toString()));
+			System.out.println("state:"+apple.getState().toString());
 			for(int i=0;i<hs.size;i++) {
 				System.out.println("hash:"+hs.code[i]);
-				System.out.println(Long.toBinaryString(hs.code[i]));
 			}
 			for(int i=0;i<apple.winValue.length;i++)
 				System.out.println(i+":win---"+apple.winValue[i]);
 			System.out.println("visit---"+apple.v);
-    	}
-
-    	for(long s:huffmanMemorys.keySet()) {
-			huffmanSet hs=huffmanMemorys.get(s);
-			Node apple=hs.n;
-			for(int i=0;i<hs.size;i++) {
-				System.out.println("hash:"+hs.code[i]);
-				System.out.println(Long.toBinaryString(hs.code[i]));
-				if(Long.toBinaryString(hs.code[i]).equals("0")) {
-					System.out.println("0 hit");
-					System.out.println("key--"+s);
-					System.out.println("state:"+MCTSutils.preprocess(apple.getState().toString()));
-					System.out.println(makeHuffmanCode(apple.getState().toString()));
-					System.out.println(hs.numDigit);
-					System.out.println();
-				}
-			}
-		}
+    	}*/
 
 
-    	 for(String s:haffmanHashMap.keySet()) {
-			 System.out.println(s+":"+haffmanHashMap.get(s));
-		 }
+
+    	showAllCount=0;
+        showAll(root);
+        System.out.println("show all count;;;"+showAllCount);
+        System.out.println(getOwnRoleNumber()+"--nsnull count;;;"+nsnull);
+        System.out.println(getOwnRoleNumber()+"--notnsnull count;;;"+notnsnull);
 
     	 System.out.println("select null count:"+selectNullCount);
       	 System.out.println("select Get count:"+selectGetCount);
-      	 int maxDigits=0;
-      	 int sizesize=0;
-      	 int minDigits=100;
-     	for(long s:huffmanMemorys.keySet()) {
-     		int apple=huffmanMemorys.get(s).numDigit;
-     		if(maxDigits<apple) {
-     			maxDigits=apple;
-     			sizesize=huffmanMemorys.get(s).size;
-     		}
-     		if(minDigits>apple)
-     			minDigits=apple;
-     	}
-     	System.out.println("max digits:"+maxDigits+", size:"+sizesize);
-     	System.out.println("min digits:"+minDigits);
-    	System.out.println();
+		 System.out.println("semi icchi:"+semiIcchi);
+		 System.out.println("icchi:"+icchi);
+		 System.out.println("hsCount:"+hsCount);
+		 icchi=0;hsCount=0;semiIcchi=0;
+		 selectNullCount=0;selectGetCount=0;
+		 nsnull=0;notnsnull=0;
+
+		 System.out.println();
 
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
@@ -251,7 +233,7 @@ public final class HuffmanGamer extends SampleGamer
     		this.v=0;
     	    this.state=state;
     	    this.depth=0;
-    	    this.children= new HashMap<MachineState ,HuffmanGamer.Node>();
+    	    this.children= new HashMap<MachineState ,HuffmanAppleGamer.Node>();
     	    this.winValue=new int[totalPlayerNumber];
     	    this.winRate=new double[totalPlayerNumber];
     	}
@@ -313,6 +295,7 @@ public final class HuffmanGamer extends SampleGamer
     public Node lastNode=null; //前回の盤面情報
     public int errorCount=0;
 
+    public boolean firstPlayoutState=true;
     /*
      * 一回のシミュレーションの過程で発生したノードはキューに突っ込む
      */
@@ -332,6 +315,7 @@ public final class HuffmanGamer extends SampleGamer
       		playerNum=(playerNum+1)%(theMachine.getRoles().size());
       		totalStateNumber++;
      	}
+		firstPlayoutState=true;
 
 
     	List<Role> roleList=theMachine.getRoles();
@@ -345,19 +329,27 @@ public final class HuffmanGamer extends SampleGamer
     	 * シミュレーションの過程で発生した盤面情報をHuffmanメモリに保存する。
     	 * この時にキューに保存しているノードに訪れた回数、報酬を記録する。
     	 */
+    	//test0718
+    	Map<MachineState, Integer> testMap=new HashMap<>();
+    	Map<MachineState, Integer> testMapVisit=new HashMap<>();
+    	Map<String,Integer> fakeMap=new HashMap<>();
+    	Map<String,String> fakeHashMap=new HashMap<>();
+
+
     	Node parent=null;
     	for (Node v : que) {
+    		//System.out.println("state:"+v.state.toString());
+    		testMap.put(v.state, v.winValue[0]+v.winValue[1]);
+    		testMapVisit.put(v.state, v.v);
     		v.visitValueCount();
     		v.setWinValue(goalScore);
     		if(parent!=null) {
     			v.setdepthValue(parent.depth+1);
         	}
     		String huffman=makeHuffmanCode(v.state.toString());
-    		//addHuffmanMemory(huffman,v,goalScore);
-    		addSplitHuffman(huffman,goalScore);
+    		addHuffmanMemory(huffman,v,goalScore);
     		parent=v;
     	}
-
     	/*
     	 * キューに保存していたノードを取り出していく。
     	 * つまり、シミュレーションの過程ではじめに発生した盤面情報から順に参照していく。
@@ -381,9 +373,28 @@ public final class HuffmanGamer extends SampleGamer
     		 * 二つ目のif文は、構築している木には存在するが、親子関係が成立していない場合の拡張
     		 */
     		if( ns==null) {
+    			/*
+    			System.out.println("null part");
+    			System.out.println("state:::"+MCTSutils.pressRoleString(MCTSutils.preprocess(v.state.toString()), fakeHashMap, fakeMap));
+    			System.out.println("huffman score:[0]---"+testMap.get(v.state));
+    			System.out.println("goal score:[0]---"+goalScore[0]+", [1]---"+goalScore[1]);
+    			System.out.println("v g  score:[0]---"+v.winValue[0]+", [1]---"+v.winValue[1]);
+    			System.out.println("huffman visit:"+testMapVisit.get(v.state));
+    			System.out.println("this visit:"+v.v);
+    			*/
+    			nsnull++;
     			saveNode.expand(v);
         		break;
     		}else if(!saveNode.hasChild(v.state)) {
+    			/*
+    			System.out.println("has chiled part");
+    			System.out.println("state:::"+MCTSutils.pressRoleString(MCTSutils.preprocess(v.state.toString()), fakeHashMap, fakeMap));
+    			System.out.println("huffman score:[0]---"+testMap.get(v.state));
+    			System.out.println("goal score:[0]---"+goalScore[0]+", [1]---"+goalScore[1]);
+    			System.out.println("v g  score:[0]---"+v.winValue[0]+", [1]---"+v.winValue[1]);
+    			System.out.println("huffman visit:"+testMapVisit.get(v.state));
+    			System.out.println("this visit:"+v.v);*/
+    			notnsnull++;
     			saveNode.expand(ns);
         		break;
     		}
@@ -404,12 +415,11 @@ public final class HuffmanGamer extends SampleGamer
     	int bestValue=0;
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
-    		System.out.println("--- select next play ---");
+    		/*
     		System.out.println(MCTSutils.preprocess(key.toString()));
     		System.out.println("child.v:"+child.v);
     		System.out.println("win rate:"+child.winValue[getOwnRoleNumber()]);
-    		System.out.println();
-
+*/
         	if(child.v>bestValue) {
         		bestValue=child.v;
         		bestState=key;
@@ -448,10 +458,11 @@ public final class HuffmanGamer extends SampleGamer
     			}
     		}
     	}else {
-
+    		/*
     		MachineState state=getUnexploredNextState(n);
-    		selectNode=new Node(state);
-    		//selectNode=getUnexploredNextNode(n);
+    		selectNode=new Node(state);*/
+    		selectNode=getUnexploredNextNode(n);
+    		firstPlayoutState=false;
     		//System.out.println("OOMOTO:"+n.state);
     		//System.out.println("select:"+selectNode.state);
     		//System.out.println("sub   :"+subNode.state);
@@ -479,7 +490,7 @@ public final class HuffmanGamer extends SampleGamer
     public double uctCalculation(Node parent,Node child) {
     	double logVisitedValue=Math.log(parent.v);
     	double searchValue=0;
-    	double C=1.4143;
+    	double C=0.7;
 
     	if(child.v!=0) {
     		searchValue=Math.sqrt(logVisitedValue/child.v);
@@ -518,59 +529,25 @@ public final class HuffmanGamer extends SampleGamer
      */
     public MachineState getUnexploredNextState(Node n) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
-    	 MachineState nextState = null;
-    	 Node selectHuffmanNode;
-    	 MachineState save=null;
-    	 double saveWinRate=0.0;
-    	 /*
-    	 while(true) {
-     		List<Move> a=theMachine.getRandomJointMove(n.getState());
-     		nextState = theMachine.getNextState(n.getState(),a );
-             if(!n.children.containsKey(nextState)) {
-                	break;
-             }
-     	}*/
+    	 MachineState nextState;
 
     	 supertest++;
-    	 List<MachineState> nextStateList=new ArrayList<>();
-    	 List<List<Move>> l=theMachine.getLegalJointMoves(n.getState());
-    	 for(List<Move> move:l) {
-    		 nextState = theMachine.getNextState(n.getState(),move );
 
-    		 if(!n.children.containsKey(nextState)) {
-                	nextStateList.add(nextState);
-             }
-    	 }
-    	 //int rnd = new Random().nextInt(nextStateList.size());
-    	 //nextState= nextStateList.get(rnd);
-    	 //System.out.println("start this method");
-    	 for(MachineState state:nextStateList) {
-           	String huffman=makeHuffmanCode(state.toString());
-        	selectHuffmanNode=this.testUsedSplitHash(huffman);
-        	//System.out.println("win value---[0]:"+selectHuffmanNode.winValue[0]+", [1]:"+selectHuffmanNode.winValue[1]);
-			//System.out.println("visit times:"+selectHuffmanNode.v);
-        	if(selectHuffmanNode.v==0)
-        		continue;
-        	selectHuffmanNode.winRateCalculation();
-			//System.out.println("win RATE---[0]:"+selectHuffmanNode.winRate[0]+", [1]:"+selectHuffmanNode.winRate[1]);
-        	if(saveWinRate < selectHuffmanNode.winRate[getCurrentPlayerNum()] || save==null) {
-        		saveWinRate = selectHuffmanNode.winRate[getCurrentPlayerNum()];
-        		save=state;
-        	}
-    	 }
-    	 if(save==null || !ipsilonGreedy()) {
-    		 int rnd = new Random().nextInt(nextStateList.size());
-        	 save= nextStateList.get(rnd);
-    	 }
-    	 //System.out.println("save:"+save);
-    	 //System.out.println();
-    	 return save;
-    	//return nextState;
+    	while(true) {
+    		List<Move> a=theMachine.getRandomJointMove(n.getState());
+    		nextState = theMachine.getNextState(n.getState(),a );
+            if(!n.children.containsKey(nextState)) {
+               	break;
+            }
+    	}
+
+
+    	return nextState;
     }
 
     int selectNullCount=0;
     int selectGetCount=0;
-/*
+
     public Node getUnexploredNextNode(Node n) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
     	 MachineState nextState;
@@ -581,10 +558,11 @@ public final class HuffmanGamer extends SampleGamer
     		List<Move> a=theMachine.getRandomJointMove(n.getState());
     		nextState = theMachine.getNextState(n.getState(),a );
             if(!n.children.containsKey(nextState)) {
-            	String huffman=makeHuffmanCode(nextState.toString());
-            	//selectHuffmanNode=selectHuffmanMemory(huffman);
-            	sss=nextState.toString();
-            	selectHuffmanNode=this.testUsedSplitHash(huffman);
+            	if(firstPlayoutState) {
+            		String huffman=makeHuffmanCode(nextState.toString());
+            			selectHuffmanNode=selectHuffmanMemory(huffman);
+
+            	}
                	break;
             }
     	}
@@ -602,10 +580,10 @@ public final class HuffmanGamer extends SampleGamer
     		System.out.println("OOMOTO :"+n.state);
     		System.out.println("nextsta:"+nextState);
     		System.out.println("huffman:"+selectHuffmanNode.getState());
-    		System.out.println("own win Value:"+selectHuffmanNode.winValue[getOwnRoleNumber()]+", visit times:"+selectHuffmanNode.v);
+    		System.out.println("own win Value:"+selectHuffmanNode.winValue[getOwnRoleNumber()]+", visit times:"+selectHuffmanNode.v);*/
     		return returnNode;
     	}
-    }*/
+    }
 
     /*
      * Search the same Node as the argument Node in constructed tree.
@@ -680,6 +658,9 @@ public final class HuffmanGamer extends SampleGamer
      */
     int globalDepth=0;
     int showAllCount=0;
+    int nsnull=0;
+    int notnsnull=0;
+
     public void showAll(Node n) {
     	showAllCount++;
     	/*
@@ -729,7 +710,6 @@ public final class HuffmanGamer extends SampleGamer
 
 	/*part of huffman*/
 	Map<Long,huffmanSet> huffmanMemorys = new HashMap<>();
-	Map<Long,Node> splitHuffmanHash = new HashMap<>();
 
 	public static class huffmanSet{
 		long[] code=new long[10];
@@ -772,15 +752,15 @@ public final class HuffmanGamer extends SampleGamer
 
 	public String makeHuffmanCode(String state) {
 		  MCTSutils mu=new MCTSutils();
-	      Map<String,Integer> fakeMap=new HashMap<>();
-	      Map<String,String> fakeHashMap=new HashMap<>();
 
 	      state=mu.preprocess(state);
-	      state=mu.pressRoleString(state, fakeHashMap, fakeMap);
-	        //System.out.println(state);
+	      //System.out.println("omae ga hannin ka");
+	      state=mu.pressRoleString(state, wardToCharMap,appearMap);
+	       // System.out.println(state);
+	        //System.out.println("[0]---"+boardSize[0]+", [1]---"+boardSize[1]);
+	        //System.out.println("[2]---"+boardSize[2]+", [3]---"+boardSize[3]);
 	      state=mu.makePerfectBoard(state,boardSize);
-	        //System.out.println(state);
-			//System.out.println("lenght:"+state.length());
+	        //System.out.println("lenght:"+state.length());
 
 	      String hash=mu.encodeHaffman(state,haffmanHashMap);
 			//System.out.println(hash);
@@ -812,6 +792,9 @@ public final class HuffmanGamer extends SampleGamer
 		}else {
 			//衝突
 			hs=huffmanMemorys.get(key);
+			//hs.updateNode(goalScore,n.depth);
+
+
 			if(hs.n.state.equals(n.state)) {
 				hs.updateNode(goalScore,n.depth);
 				badCount++;
@@ -828,12 +811,22 @@ public final class HuffmanGamer extends SampleGamer
 		}
 
 	}
+	public int icchi=0;
+	public int semiIcchi=0;
+	public int hsCount=0;
 	public Node selectHuffmanMemory(String state) {
 		double min=1.0;
 		Node n=null;
 		 huffmanSet hs=new huffmanSet(state,null);
 		 huffmanSet saveHuffman=null;
-
+		 if(huffmanMemorys.containsKey(hs.code[0])) {
+			 huffmanSet a=huffmanMemorys.get(hs.code[0]);
+			 semiIcchi++;
+			 if(a.code[1]==hs.code[1]) {
+				 icchi++;
+				 return a.n;
+			 }
+		 }
 		 for(long s:huffmanMemorys.keySet()) {
 			 huffmanSet byHsList=huffmanMemorys.get(s);
 
@@ -869,6 +862,7 @@ public final class HuffmanGamer extends SampleGamer
 					System.out.println("apple:"+Long.bitCount(apple));
 					System.out.println("number of difgits:"+hs.numDigit);
 			}*/
+			 hsCount++;
 			return n;
 		 }
 		else
@@ -888,65 +882,8 @@ public final class HuffmanGamer extends SampleGamer
 		return per;
 	}
 
-	//add new zone 0714
-	public  Node testUsedSplitHash(String hash) {
-		 int size=hash.length();
-		 int beginIndex=0,endIndex=0;
-		 int HASHSIZE=16;
-		 int[] totalWinValue= {0,0};
-		 int totalVisitCount=0;
-		 Node result=new Node(null);
-		 for(int i=0;i<size;i=endIndex) {
-				beginIndex=i;
-				endIndex=i+HASHSIZE;
-				if(endIndex>size)
-					endIndex=size;
-				String miniHash=hash.substring(beginIndex, endIndex);
-				if(miniHash.length()<HASHSIZE)
-					for(int j=miniHash.length();j<HASHSIZE;j++)
-						miniHash+="0";
 
-				Long key=Long.parseLong(miniHash,2);
-				if(splitHuffmanHash.containsKey(key)) {
-					Node n=splitHuffmanHash.get(key);
-					for(int j=0;j<totalPlayerNumber;j++)
-						totalWinValue[j]+=n.winValue[j];
-					totalVisitCount+=n.v;
-				}else {
-				}
-			}
-		 result.setWinValue(totalWinValue);
-		 result.v=totalVisitCount;
-		 return result;
-	}
 
-	public  void addSplitHuffman(String hash,int[] winValue) {
-		 int size=hash.length();
-		 int beginIndex=0,endIndex=0;
-		 int HASHSIZE=16;
-		 for(int i=0;i<size;i=endIndex) {
-				beginIndex=i;
-				endIndex=i+HASHSIZE;
-				if(endIndex>size)
-					endIndex=size;
-				String miniHash=hash.substring(beginIndex, endIndex);
-				if(miniHash.length()<HASHSIZE)
-					for(int j=miniHash.length();j<HASHSIZE;j++)
-						miniHash+="0";
-
-				Long key=Long.parseLong(miniHash,2);
-				if(!splitHuffmanHash.containsKey(key)) {
-					 Node n=new Node(null);
-					 n.setWinValue(winValue);
-					 n.visitValueCount();
-					 splitHuffmanHash.put(key,n);
-				}else {
-					Node n=splitHuffmanHash.get(key);
-					 n.setWinValue(winValue);
-					 n.visitValueCount();
-				}
-			}
-	}
     @Override
     public void stateMachineStop() {
         // Do nothing.
@@ -961,7 +898,7 @@ public final class HuffmanGamer extends SampleGamer
 
     @Override
     public String getName() {
-        return "HuffmanPlayer";
+        return "HuffmanApplePlayer";
     }
 
     @Override
