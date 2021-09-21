@@ -24,7 +24,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-public final class MCTSGamerV2 extends SampleGamer
+public final class MCTSGamerV3 extends SampleGamer
 {
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -66,6 +66,7 @@ public final class MCTSGamerV2 extends SampleGamer
         	long afterTime=System.currentTimeMillis();
         	long apaman=afterTime-beforeTime;
         	System.out.println("first brack:"+(afterTime-beforeTime));
+
         	if(nm!=null) {
         		n=nm;
         	}
@@ -76,13 +77,7 @@ public final class MCTSGamerV2 extends SampleGamer
         for(int i=0;i<750;i++) {
         	MonteCalroPlayout(n);
        	}
-        //test0722
-        /*
-        System.out.println("MCTSGamerV2");
-        for(MachineState childState:n.children.keySet()) {
-        	System.out.println(childState);
-        	System.out.println("visit times:"+n.children.get(childState).v);
-        }*/
+
 
 
         /*
@@ -102,7 +97,7 @@ public final class MCTSGamerV2 extends SampleGamer
         showAllCount=0;
         nodeCount=0;
         showAll(root);
-        System.out.println("---     V 2     ----");
+        System.out.println("---     V 3     ----");
         System.out.println("--- "+kokoko+" turn ----");
         System.out.println(getOwnRoleNumber()+"--show all count;;;"+showAllCount);
         System.out.println(getOwnRoleNumber()+"--nsnull count;;;"+nsnull);
@@ -143,13 +138,16 @@ public final class MCTSGamerV2 extends SampleGamer
     	int winValue[];//accumulated points
     	double winRate[];//(winValue/v)
 
+    	boolean isExpand;//test0730
+
     	Node(MachineState state){
     		this.v=0;
     	    this.state=state;
     	    this.depth=0;
-    	    this.children= new HashMap<MachineState ,MCTSGamerV2.Node>();
+    	    this.children= new HashMap<MachineState ,MCTSGamerV3.Node>();
     	    this.winValue=new int[totalPlayerNumber];
     	    this.winRate=new double[totalPlayerNumber];
+    	    this.isExpand=false;//test0730
     	}
 
     	public MachineState getState() {
@@ -259,6 +257,7 @@ public final class MCTSGamerV2 extends SampleGamer
     	 * nodeSearchメソッドで構築している木にあるか参照し、なかったら拡張して参照を終了する。
     	 */
     	saveNode=que.poll();
+    	MachineState saveState=saveNode.state;
     	Node nm=nodeSearch(root,saveNode.state);//*taking time
 
     	//Node nm=nodeSearch(lastNode,saveNode.state);
@@ -267,24 +266,28 @@ public final class MCTSGamerV2 extends SampleGamer
     		return;
     	}
     	for (Node v : que) {
-    		testCount++;
-    		Node ns=nodeSearch(root,v.state);//*taking time
-
+    		if(v.isExpand) {//test0730
+    			v.isExpand=false;
+    			testCount++;
+    			Node ns=nodeSearch(root,v.state);//*taking time
+    			saveNode=nodeSearch(root,saveState);
     		//Node ns=nodeSearch(n,v.state);
     		/*
     		 * 一つ目のif文は、構築している木にない場合の拡張
     		 * 二つ目のif文は、構築している木には存在するが、親子関係が成立していない場合の拡張
     		 */
-    		if( ns==null) {
-    			nsnull++;
-    			saveNode.expand(v);
-        		break;
-    		}else if(!saveNode.hasChild(v.state)) {
-    			notnsnull++;
-    			saveNode.expand(ns);
-        		break;
+    			if( ns==null) {
+    				nsnull++;
+    				saveNode.expand(v);
+    				break;
+    			}else if(!saveNode.hasChild(v.state)) {
+    				notnsnull++;
+    				saveNode.expand(ns);
+    				break;
+    			}
     		}
-    		saveNode=ns;
+    		//saveNode=ns;
+    		saveState=v.state;
     	}
 
     	//System.out.println("--- select next play ---");
@@ -312,23 +315,13 @@ public final class MCTSGamerV2 extends SampleGamer
     	MachineState bestState=null;
     	Move bestMove=null;
     	int bestValue=0;
-    	System.out.println("MCTSGamerV2 --->>> select Next Play");
-     	int winValueTotal=0;
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
-
-    		System.out.println(MCTSutils.preprocess(key.toString()));
-    		System.out.println("child.v:"+child.v);
-    		System.out.println("win :"+child.winValue[getOwnRoleNumber()]);
-    		winValueTotal += child.winValue[getOwnRoleNumber()];
-
         	if(child.v>bestValue) {
         		bestValue=child.v;
         		bestState=key;
         	}
     	}
-
-    	System.out.println("win total:::"+winValueTotal);
 
 
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
@@ -364,6 +357,7 @@ public final class MCTSGamerV2 extends SampleGamer
     	}else {
     		MachineState state=getUnexploredNextState(n);
     		selectNode=new Node(state);
+    		selectNode.isExpand=true;
     	}
 
     	return selectNode;
@@ -520,23 +514,28 @@ public final class MCTSGamerV2 extends SampleGamer
     /*
      * Print all of Nodes in constructed tree.
      */
-    int globalDepth=0;
+    int globalDepth=9;
     int showAllCount=0;
     int nodeCount=0;
     int expandCount=0;
     int nsnull=0;
     int notnsnull=0;
+
     public void showAll(Node n) {
     	showAllCount++;
-    	/*
+        Map<String,Integer> fakeMap=new HashMap<>();
+        Map<String,String> fakeHashMap=new HashMap<>();
+
+        /*
     	if(n.depth<=globalDepth) {
+
     		System.out.println("--- show all ---");
-    		System.out.println(n.state);
-    	  	System.out.println(MCTSutils.preprocess(n.state.toString()));
+    		//System.out.println(n.state);
+    	  	System.out.println(MCTSutils.pressRoleString(MCTSutils.preprocess(n.state.toString()),fakeHashMap,fakeMap));
     		System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
     		System.out.println("w/v:::"+n.winValue[getOwnRoleNumber()]/n.v);
-    	}
-    	*/
+    	}*/
+
     	if(n.children == null){
     		return;
     	}
@@ -726,7 +725,7 @@ public final class MCTSGamerV2 extends SampleGamer
 
     @Override
     public String getName() {
-        return "MCTSPlayerV2";
+        return "MCTSPlayerV3";
     }
 
     @Override
@@ -744,3 +743,5 @@ public final class MCTSGamerV2 extends SampleGamer
         // Do nothing.
     }
 }
+
+

@@ -24,7 +24,7 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-public final class HuffmanAppleGamer extends SampleGamer
+public final class HuffmanBananaGamer extends SampleGamer
 {
 	//int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
 	int[] boardSize= {-1,-1,1,1};
@@ -293,7 +293,7 @@ public final class HuffmanAppleGamer extends SampleGamer
     		this.v=0;
     	    this.state=state;
     	    this.depth=0;
-    	    this.children= new HashMap<MachineState ,HuffmanAppleGamer.Node>();
+    	    this.children= new HashMap<MachineState ,HuffmanBananaGamer.Node>();
     	    this.winValue=new int[totalPlayerNumber];
     	    this.winRate=new double[totalPlayerNumber];
     	}
@@ -407,7 +407,8 @@ public final class HuffmanAppleGamer extends SampleGamer
     			v.setdepthValue(parent.depth+1);
         	}
     		String huffman=makeHuffmanCode(v.state.toString());
-    		addHuffmanMemory(huffman,v,goalScore);
+    		//addHuffmanMemory(huffman,v,goalScore);
+    		addHufMemo(huffman,v,goalScore);
     		parent=v;
     	}
     	/*
@@ -896,61 +897,157 @@ public final class HuffmanAppleGamer extends SampleGamer
 		}
 
 	}
+
+
+	public void addHufMemo(String hash,Node n,int[] goalScore) {
+
+		Node m=new Node(n.state);
+		m.visitValueCount();
+		m.setWinValue(goalScore);
+		m.setdepthValue(n.depth);
+		huffmanSet hs=new huffmanSet(hash,m);
+
+		long key=hs.code[0];
+		for(int i=1;i<hs.size;i++)
+			key=key^hs.code[i];
+
+		if(!huffmanMemorys.containsKey(key)) {
+			huffmanMemorys.put(key,hs);
+			newCount++;
+			return;
+		}else {
+			//衝突
+			hs=huffmanMemorys.get(key);
+			//hs.updateNode(goalScore,n.depth);
+
+
+			if(hs.n.state.equals(n.state)) {
+				hs.updateNode(goalScore,n.depth);
+				badCount++;
+				return;
+			}/*else {
+				for(int i=1;i<hs.size;i++) {
+					long semiKey=hs.code[i];
+					key=key ^ semiKey;
+					if(!huffmanMemorys.containsKey(key)) {
+						elsebadCount++;
+						huffmanMemorys.put(key,hs);
+						return;
+					}else if(i==hs.size-1){
+						hs=huffmanMemorys.get(key);
+						hs.updateNode(goalScore,n.depth);
+						semibadCount++;
+						return;
+					}
+				}*/
+				/*
+				System.out.println(MCTSutils.pressRoleString(MCTSutils.preprocess(hs.n.state.toString()),  fakeHashMap,fakeMap));
+				System.out.println(MCTSutils.pressRoleString(MCTSutils.preprocess(n.state.toString()),  fakeHashMap,fakeMap));
+				System.out.println();
+				*/
+			//}
+			/*
+			if(testADD==0) {
+				testADD++;
+				System.out.println("hs;"+hs.n.state);
+				System.out.println("n;;"+n.state);
+				String hsState=makeHuffmanCode(hs.n.state.toString());
+				String nState=makeHuffmanCode(n.state.toString());
+				System.out.println("hsState:"+hsState);
+				System.out.println("nState:"+nState);
+				System.out.println("hs code");
+				for(int i=0;i<hs.size;i++){
+					System.out.println(hs.code[i]);
+				}
+				System.out.println("hash:"+hash);
+				System.out.println("code list");
+				for(long l:hs.code) {
+					System.out.print(l+",");
+				}
+				System.out.println();
+
+				System.out.println("all of huffman memories");
+				for(long l:huffmanMemorys.keySet()) {
+					huffmanSet h=huffmanMemorys.get(l);
+					System.out.print(l+"---");
+					for(long ll:h.code) {
+						System.out.print(ll+",");
+					}
+					System.out.println();
+				}
+				System.out.println("size;;;"+huffmanMemorys.size());
+				String state=n.state.toString();
+				System.out.println(state);
+				state=mu.preprocess(state);
+				System.out.println(state);
+				state=mu.wtnInboardInformation(state);
+				System.out.println(state);
+				state=mu.pressRoleString(state, wardToCharMap,appearMap);
+				System.out.println(state);
+				state=mu.makePafeBoard(state);
+				System.out.println(state);
+				System.out.println("lenght:"+state.length());
+				String banana=mu.encodeHaffman(state,haffmanHashMap);
+				System.out.println(banana);
+				System.out.println("The end ttene");
+			}*/
+			//hs.updateNode(goalScore,n.depth);
+			crashCount++;
+		}
+
+	}
+
 	public int icchi=0;
 	public int semiIcchi=0;
 	public int hsCount=0;
 	public Node selectHuffmanMemory(String state) {
 		double min=1.0;
 		Node n=null;
-		 huffmanSet hs=new huffmanSet(state,null);
-		 if(huffmanMemorys.containsKey(hs.code[0])) {
+		huffmanSet hs=new huffmanSet(state,null);
+		/*if(huffmanMemorys.containsKey(hs.code[0])) {
 			 huffmanSet a=huffmanMemorys.get(hs.code[0]);
 			 semiIcchi++;
 			 if(a.code[1]==hs.code[1]) {
 				 icchi++;
-				 hsCount++;
 				 return a.n;
 			 }
-		 }
-		 for(long s:huffmanMemorys.keySet()) {
-			 huffmanSet byHsList=huffmanMemorys.get(s);
-
-			 double numberOfDigits=hs.numDigit;
-			 if(numberOfDigits<byHsList.numDigit)
-				 numberOfDigits=byHsList.numDigit;
-
-			double a=minHashModoki(byHsList.code, hs.code,numberOfDigits);
-			if(min>a && a!=1.0) {
-				min=a;
-				n=byHsList.n;
-			}
+		 }*/
+		long key=hs.code[0];
+		for(int i=1;i<hs.size;i++) {
+			key=key^hs.code[i];
 		}
-		 //System.out.println("min---"+min);
-		 //System.out.println(hs.code[0]);
-		 //System.out.println();
+		 n=matchHashCode(key,hs);
+		 if(n!=null) {
+			 hsCount++;
+			 return n;
+
+		 }/*
+		for(int i=0;i<63;i++) {
+			long a=(long)Math.pow(2, i);
+			long key=hs.code[0]^a;
+			 n=matchHashCode(key,hs);
+			 if(n!=null)
+				 return n;
+		}*/
 		 if(min<0.15) {
-			 /*
-			  min=saveHuffman.size;
-			  if(hs.size<min)
-					min=hs.size;
-			 for(int i=0;i<min;i++) {
-					long apple=saveHuffman.code[i]^hs.code[i];
-					System.out.println("---"+i+"---");
-					System.out.println("l1");
-					System.out.println("code  :"+saveHuffman.code[i]);
-					System.out.println("binary:"+Long.toBinaryString(saveHuffman.code[i]));
-					System.out.println("number of difgits:"+saveHuffman.numDigit);
-					System.out.println("l2");
-					System.out.println("code  :"+hs.code[i]);
-					System.out.println("binary:"+Long.toBinaryString(hs.code[i]));
-					System.out.println("apple:"+Long.bitCount(apple));
-					System.out.println("number of difgits:"+hs.numDigit);
-			}*/
-			return n;
+			 return n;
 		 }
 		else
 			return null;
 	}
+
+	public  Node matchHashCode(long l,huffmanSet hs) {
+		if(huffmanMemorys.containsKey(l)) {
+			 huffmanSet semiHs=huffmanMemorys.get(l);
+			 for(int i=0;i<hs.size;i++) {
+				 if(hs.code[i]!=semiHs.code[i])
+					 return null;
+			 }
+			 return semiHs.n;
+		 }
+		return null;
+	}
+
 	public  double minHashModoki(long[] l1,long[] l2,double numberOfDigits) {
 		int min=l1.length;
 		int count=0,l1Length=0,l2Length=0,length;
@@ -981,7 +1078,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     @Override
     public String getName() {
-        return "HuffmanApplePlayer";
+        return "HuffmanBananaPlayer";
     }
 
     @Override

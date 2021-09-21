@@ -1,10 +1,16 @@
 package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MCTSutils {
+	public MCTSutils() {
+		rowWordToNumberMap = new HashMap<>();
+		columnWordToNumberMap = new HashMap<>();
+	}
 
 	public static String hash(String str,int lengthOfHash){
 		byte[] ascii=str.getBytes();
@@ -95,7 +101,7 @@ public class MCTSutils {
 				for(j=i+1;c[j]!=')';j++) {
 					s+=c[j];
 				}
-				s+=c[j];
+				s+=c[j]+",";
 
 				ls.add(s);
 				s="";
@@ -318,5 +324,91 @@ public class MCTSutils {
 
 		return result;
 	}
+	public static String makePafeBoard(String str) {
+		Collection<Integer> rows=rowWordToNumberMap.values();
+		ArrayList<Integer> newRows = new ArrayList<>(rows);
+		Collection<Integer> columns=columnWordToNumberMap.values();
+		ArrayList<Integer> newColumns = new ArrayList<>(columns);
+		Collections.sort(newRows);
+		Collections.sort(newColumns);
+		str=str.replace("(","");
+			String[] states=str.replace("(","").split("[)]");
+		String result="";
+		int stateIndex=0;
+		if(str.length()==0) {
+			for(Integer x:newColumns)
+				for(Integer y:newRows)
+					result+="¥";
+
+		}else {
+			for(Integer x:newColumns) {
+				for(Integer y:newRows) {
+					String[] array=states[stateIndex].split(",");
+					if(x==Integer.valueOf(array[0]).intValue() && y==Integer.valueOf(array[1]).intValue()) {
+						for(int i=2;i<array.length;i++)
+							result+=array[i];
+						stateIndex++;
+					}else {
+						result+="¥";
+					}
+					if(stateIndex==states.length)
+						stateIndex=states.length-1;
+				}
+			}
+		}
+		return result;
+
+	}
+
+	public static String wtnInboardInformation(String str) {
+		String[] array=str.split(",");
+		String result="";
+
+		for(String s:array) {
+			s=s.substring(s.indexOf("(")+2,s.indexOf(")"));
+			String[] wordArray=s.split(" ");
+
+			if(wordArray.length>=4) {
+				result+="( ";
+				for(int j=0;j<wordArray.length;j++) {
+					if(j==1) { //&& (!wordArray[j].matches("[+-]?\\d*(\\.\\d+)?"))) {
+						Integer num=wordToNumber(wordArray[j],columnWordToNumberMap);
+						result+=num.toString()+" ";
+					}else if(j==2) {
+						Integer num=wordToNumber(wordArray[j],rowWordToNumberMap);
+						result+=num.toString()+" ";
+					}else if(j==wordArray.length-1)
+						result+=wordArray[j]+" )";
+					else
+						result+=wordArray[j]+" ";
+				}
+			}
+		}
+		return result;
+
+
+	}
+	public static Map<String,Integer> rowWordToNumberMap = new HashMap<>();
+	public static Map<String,Integer> columnWordToNumberMap = new HashMap<>();
+
+	public static int wordToNumber(String str,Map<String,Integer> map) {
+		if(str.matches("[+-]?\\d*(\\.\\d+)?")) {
+			if(map.containsKey(str)) {
+				return map.get(str);
+			}else {
+				map.put(str, Integer.parseInt(str));
+				return map.get(str);
+			}
+		}
+		if(map.containsKey(str)) {
+			return map.get(str);
+		}else {
+			map.put(str, map.size()+1);
+			return map.size();
+		}
+
+	}
+
+
 
 }
