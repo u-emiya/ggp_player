@@ -34,6 +34,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 	 Map<String,String> wardToCharMap=new HashMap<>();
 	 Map<String,Integer> appearMap=new HashMap<>();
 	 MCTSutils mu=new MCTSutils();
+	 public static final int HASHSIZE=63;
 
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
@@ -211,9 +212,9 @@ public final class HuffmanBananaGamer extends SampleGamer
     	}*/
     	System.out.println("icchi:"+icchi);
      	System.out.println("semi icchi:"+semiIcchi);
+     	System.out.println("honto:"+honto);
     	System.out.println("hs count:"+hsCount);
     	icchi=0;semiIcchi=0;hsCount=0;
-
     	System.out.println("new count:"+newCount);
      	System.out.println("bad count:"+badCount);
      	System.out.println("semibad count:"+semibadCount);
@@ -223,6 +224,12 @@ public final class HuffmanBananaGamer extends SampleGamer
     	badCount=0;semibadCount=0;elsebadCount=0;crashCount=0;newCount=0;elsebadCount=0;
     	System.out.println();
 
+    	if(honto==0) {
+    		for(long l:huffmanMemorys.keySet()) {
+    			System.out.println(Long.toBinaryString(l));
+    			honto++;
+    		}
+    	}
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         //System.out.println("error count:::"+errorCount);
@@ -752,7 +759,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 			for(int i=0;i<c.length;i++) {
 				result+=c[i];
 				numDigit++;
-				if(result.length()>62) {
+				if(result.length()>(HASHSIZE-1)) {
 					//String binary=result.substring(0,63);
 					code[size++]=Long.parseLong(result,2);
 					result="";
@@ -760,7 +767,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 			}
 			if(result.length()>0) {
 				result+="1";
-				for(int i=result.length();i<63;i++)
+				for(int i=result.length();i<HASHSIZE;i++)
 					result+="0";
 
 				code[size++]=Long.parseLong(result,2);
@@ -1002,40 +1009,62 @@ public final class HuffmanBananaGamer extends SampleGamer
 	public int icchi=0;
 	public int semiIcchi=0;
 	public int hsCount=0;
+	public int honto=0;
 	public Node selectHuffmanMemory(String state) {
-		double min=1.0;
-		Node n=null;
+		Node matchNode=null;
 		huffmanSet hs=new huffmanSet(state,null);
-		/*if(huffmanMemorys.containsKey(hs.code[0])) {
-			 huffmanSet a=huffmanMemorys.get(hs.code[0]);
-			 semiIcchi++;
-			 if(a.code[1]==hs.code[1]) {
-				 icchi++;
-				 return a.n;
-			 }
-		 }*/
+
 		long key=hs.code[0];
 		for(int i=1;i<hs.size;i++) {
 			key=key^hs.code[i];
 		}
-		 n=matchHashCode(key,hs);
-		 if(n!=null) {
+		 matchNode=matchHashCode(key,hs);
+		 /*
+		 if(matchNode!=null) {
 			 hsCount++;
-			 return n;
+		     return matchNode;
+		 }*/
+		 Node similarNode=new Node(null);
+		 similarNode=searchSimilarHash(0,2,key,similarNode);
 
-		 }/*
-		for(int i=0;i<63;i++) {
-			long a=(long)Math.pow(2, i);
-			long key=hs.code[0]^a;
-			 n=matchHashCode(key,hs);
-			 if(n!=null)
-				 return n;
-		}*/
-		 if(min<0.15) {
-			 return n;
+		 Node returnNode=new Node(getCurrentState());
+		 if(matchNode!=null) {
+			 returnNode.setWinValue(matchNode.winValue);
+			 returnNode.v+=matchNode.v;
 		 }
-		else
-			return null;
+		 if(similarNode!=null) {
+			 returnNode.setWinValue(similarNode.winValue);
+			 returnNode.v+=similarNode.v;
+		 }
+		 if(honto==0) {
+			 System.out.println("after");
+			 System.out.println("win---"+returnNode.winValue[0]+", v---"+returnNode.v);
+		 }
+
+		 if(returnNode.v==0) {
+			 return null;
+		 }
+		return returnNode;
+	}
+
+	public Node searchSimilarHash(int start,int depth, long hash,Node saveNode ){
+		long subHash=0;
+		if(depth==0)
+			return saveNode;
+
+		for(int i=start;i<HASHSIZE;i++) {
+			long a=(long)Math.pow(2, i);
+			subHash=hash^a;
+			if(huffmanMemorys.containsKey(subHash)) {
+				Node n=huffmanMemorys.get(subHash).n;
+				saveNode.setWinValue(n.winValue);
+				saveNode.v+=n.v;
+				semiIcchi++;
+			}
+			saveNode=searchSimilarHash(i+1,depth-1,subHash,saveNode);
+		}
+		//System.out.println("end");
+		return saveNode;
 	}
 
 	public  Node matchHashCode(long l,huffmanSet hs) {
