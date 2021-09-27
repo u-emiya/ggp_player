@@ -35,7 +35,7 @@ public final class MCTSGamerV2 extends SampleGamer
      * Employs a simple sample "Monte Carlo" algorithm.
      */
 	 int kokoko=0;
-
+	 public static int testApple=0;
     @Override
     public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
     {
@@ -73,7 +73,7 @@ public final class MCTSGamerV2 extends SampleGamer
     	 */
 
         //while(System.currentTimeMillis()<finishBy) {
-        for(int i=0;i<750;i++) {
+        for(int i=0;i<500;i++) {
         	MonteCalroPlayout(n);
        	}
         //test0722
@@ -101,7 +101,7 @@ public final class MCTSGamerV2 extends SampleGamer
         long stop = System.currentTimeMillis();
         showAllCount=0;
         nodeCount=0;
-        showAll(root);
+        //showAll(root);
         System.out.println("---     V 2     ----");
         System.out.println("--- "+kokoko+" turn ----");
         System.out.println(getOwnRoleNumber()+"--show all count;;;"+showAllCount);
@@ -110,7 +110,8 @@ public final class MCTSGamerV2 extends SampleGamer
         System.out.println(getOwnRoleNumber()+"--node count;;;"+nodeCount);
         System.out.println(getOwnRoleNumber()+"--expand count;;;"+expandCount);
         System.out.println(getOwnRoleNumber()+"--node search count;;;"+testCount);
-
+        if(testApple==0)
+        	showAll(root);
         expandCount=0;
         nsnull=0;
         notnsnull=0;
@@ -118,6 +119,7 @@ public final class MCTSGamerV2 extends SampleGamer
         kokoko++;
         testCount=0;
     	supertest=0;
+    	testApple++;
     	notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         //System.out.println("error count:::"+errorCount);
         return selection;
@@ -210,17 +212,34 @@ public final class MCTSGamerV2 extends SampleGamer
     public void MonteCalroPlayout(Node n) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
     	StateMachine theMachine = getStateMachine();
     	Node node=n;
-    	Node saveNode=null;
+    	Node saveParentNode=null, saveChildNode=null;
     	MachineState state=n.getState();
     	Queue<Node> que=new ArrayDeque<>();
     	que.add(n);
     	playerNum=getCurrentPlayerNum();
 
+    	boolean testAppleBanana=true;
+
+
     	while(!theMachine.isTerminal(state)) {
+    		int childlenMaxSize=theMachine.getLegalMoves(node.state, theMachine.getRoles().get(playerNum)).size();
+    		Node beforeNode=node;
     		node=selectChildNode(node);
+     		if(beforeNode.children.size()!=childlenMaxSize && testAppleBanana) {
+     			/*
+     			System.out.println("@@@:"+beforeNode.getState());
+     			System.out.println("@@@:"+node.getState());
+      			System.out.println("@@@:(max,now)---("+childlenMaxSize+" ,"+node.children.size()+" )");
+      			*/
+      			saveParentNode=beforeNode;
+      			saveChildNode=node;
+      			testAppleBanana=false;
+      		}
+
     		state=node.getState();
       	   	que.add(node);
       		playerNum=(playerNum+1)%(theMachine.getRoles().size());
+
      	}
 
 
@@ -252,18 +271,30 @@ public final class MCTSGamerV2 extends SampleGamer
     		addPlayoutMemorys(hashInteger,v,goalScore);
     		parent=v;
     	}
-
+    	if(saveChildNode!=null) {
+    		Node expandNode=new Node(saveChildNode.getState());
+    		expandNode.visitValueCount();
+    		expandNode.setWinValue(goalScore);
+    		expandNode.setdepthValue(saveParentNode.depth+1);
+    		saveParentNode.expand(expandNode);
+    	}
     	/*
     	 * キューに保存していたノードを取り出していく。
     	 * つまり、シミュレーションの過程ではじめに発生した盤面情報から順に参照していく。
     	 * nodeSearchメソッドで構築している木にあるか参照し、なかったら拡張して参照を終了する。
     	 */
+
+    	/*
     	saveNode=que.poll();
+
+
     	Node nm=nodeSearch(root,saveNode.state);//*taking time
 
     	//Node nm=nodeSearch(lastNode,saveNode.state);
     	if(nm==null) {
     		lastNode.expand(saveNode);
+    		System.out.println("--nm 1--:"+nm.getState());
+    		System.out.println("--nm 2--:"+saveNode.getState());
     		return;
     	}
     	for (Node v : que) {
@@ -271,21 +302,28 @@ public final class MCTSGamerV2 extends SampleGamer
     		Node ns=nodeSearch(root,v.state);//*taking time
 
     		//Node ns=nodeSearch(n,v.state);
-    		/*
+    		 *
     		 * 一つ目のif文は、構築している木にない場合の拡張
     		 * 二つ目のif文は、構築している木には存在するが、親子関係が成立していない場合の拡張
-    		 */
+    		 *
     		if( ns==null) {
     			nsnull++;
     			saveNode.expand(v);
+        		System.out.println("--ns up 1--:"+saveNode.getState());
+        		System.out.println("--ns up 1--:"+v.getState());
+        		System.out.println();
         		break;
     		}else if(!saveNode.hasChild(v.state)) {
     			notnsnull++;
     			saveNode.expand(ns);
+        		System.out.println("--ns down 1--:"+saveNode.getState());
+        		System.out.println("--ns down 1--:"+ns.getState());
+        		System.out.println();
+
         		break;
     		}
     		saveNode=ns;
-    	}
+    	}*/
 
     	//System.out.println("--- select next play ---");
     	for(MachineState key:n.children.keySet()) {
@@ -528,15 +566,15 @@ public final class MCTSGamerV2 extends SampleGamer
     int notnsnull=0;
     public void showAll(Node n) {
     	showAllCount++;
-    	/*
-    	if(n.depth<=globalDepth) {
+
+    	//if(n.depth<=globalDepth) {
     		System.out.println("--- show all ---");
     		System.out.println(n.state);
     	  	System.out.println(MCTSutils.preprocess(n.state.toString()));
     		System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
     		System.out.println("w/v:::"+n.winValue[getOwnRoleNumber()]/n.v);
-    	}
-    	*/
+    	//}
+
     	if(n.children == null){
     		return;
     	}

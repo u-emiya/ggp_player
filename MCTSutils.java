@@ -403,8 +403,14 @@ public class MCTSutils {
 		if(map.containsKey(str)) {
 			return map.get(str);
 		}else {
-			map.put(str, map.size()+1);
-			return map.size();
+			if(str.length()==1) {
+				char c=str.charAt(0);
+				map.put(str, (int)(c-96));
+				return (int)(c-96);
+			}else {
+				map.put(str, map.size()+1);
+				return map.size();
+			}
 		}
 
 	}

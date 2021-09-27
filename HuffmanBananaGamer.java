@@ -25,7 +25,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-//0921
+//0926
 public final class HuffmanBananaGamer extends SampleGamer
 {
 	//int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
@@ -223,13 +223,13 @@ public final class HuffmanBananaGamer extends SampleGamer
     	System.out.println(this.makeHuffmanCode(getCurrentState().toString()));
     	badCount=0;semibadCount=0;elsebadCount=0;crashCount=0;newCount=0;elsebadCount=0;
     	System.out.println();
-
+    	/*
     	if(honto==0) {
     		for(long l:huffmanMemorys.keySet()) {
     			System.out.println(Long.toBinaryString(l));
     			honto++;
     		}
-    	}
+    	}*/
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         //System.out.println("error count:::"+errorCount);
@@ -1019,13 +1019,15 @@ public final class HuffmanBananaGamer extends SampleGamer
 			key=key^hs.code[i];
 		}
 		 matchNode=matchHashCode(key,hs);
-		 /*
+
 		 if(matchNode!=null) {
 			 hsCount++;
 		     return matchNode;
-		 }*/
+		 }
+		 return matchNode;
+		/*
 		 Node similarNode=new Node(null);
-		 similarNode=searchSimilarHash(0,2,key,similarNode);
+		 similarNode=searchSimilarHash(0,1,key,similarNode);
 
 		 Node returnNode=new Node(getCurrentState());
 		 if(matchNode!=null) {
@@ -1036,6 +1038,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 			 returnNode.setWinValue(similarNode.winValue);
 			 returnNode.v+=similarNode.v;
 		 }
+
 		 if(honto==0) {
 			 System.out.println("after");
 			 System.out.println("win---"+returnNode.winValue[0]+", v---"+returnNode.v);
@@ -1044,7 +1047,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 if(returnNode.v==0) {
 			 return null;
 		 }
-		return returnNode;
+		return returnNode;*/
 	}
 
 	public Node searchSimilarHash(int start,int depth, long hash,Node saveNode ){
@@ -1078,21 +1081,6 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 }
 		return null;
 	}
-
-	public  double minHashModoki(long[] l1,long[] l2,double numberOfDigits) {
-		int min=l1.length;
-		int count=0,l1Length=0,l2Length=0,length;
-		if(l2.length<min)
-			min=l2.length;
-		for(int i=0;i<min;i++) {
-			long apple=l1[i]^l2[i];
-			count+=Long.bitCount(apple);
-		}
-
-		double per=(double)count/numberOfDigits;
-		return per;
-	}
-
 
 
     @Override
