@@ -83,8 +83,8 @@ public final class MCTSGamerV2 extends SampleGamer
         System.out.println(getOwnRoleNumber()+"--notnsnull count;;;"+notnsnull);
         System.out.println(getOwnRoleNumber()+"--node count;;;"+nodeCount);
         System.out.println(getOwnRoleNumber()+"--expand count;;;"+expandCount);
-        if(testApple==0)
-        	showAll(root);
+//        if(testApple==0)
+  //      	showAll(root);
         expandCount=0;
         nsnull=0;
         notnsnull=0;

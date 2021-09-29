@@ -25,7 +25,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-//0926
+//0929
 public final class HuffmanBananaGamer extends SampleGamer
 {
 	//int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
@@ -165,7 +165,6 @@ public final class HuffmanBananaGamer extends SampleGamer
 
         long stop = System.currentTimeMillis();
         showAllCount=0;
-        //showAll(root);
         //System.out.println("show all count;;;"+showAllCount);
         System.out.println(n.state.toString());
         System.out.println(MCTSutils.preprocess(n.state.toString()));
@@ -206,6 +205,12 @@ public final class HuffmanBananaGamer extends SampleGamer
     	System.out.println("crash count:"+crashCount);
     	System.out.println(this.makeHuffmanCode(getCurrentState().toString()));
     	badCount=0;semibadCount=0;elsebadCount=0;crashCount=0;newCount=0;elsebadCount=0;
+
+    	System.out.println("banana: "+selectGetCount);
+    	   if(turn<2)
+           	showAll(root);
+
+    	selectGetCount=0;
     	System.out.println();
     	/*
     	if(honto==0) {
@@ -331,7 +336,6 @@ public final class HuffmanBananaGamer extends SampleGamer
     	}
 
     }
-
     public int errorCount=0;
     public int turn=0;
 
@@ -377,7 +381,7 @@ public final class HuffmanBananaGamer extends SampleGamer
     	 * この時にキューに保存しているノードに訪れた回数、報酬を記録する。
     	 */
       	Node parent=null;
-    	for (Node v : que) {
+      	for (Node v : que) {
     		v.visitValueCount();
     		v.setWinValue(goalScore);
     		if(parent!=null) {
@@ -389,8 +393,8 @@ public final class HuffmanBananaGamer extends SampleGamer
     	}
     	if(saveChildNode!=null) {
     		Node expandNode=new Node(saveChildNode.getState());
-    		expandNode.visitValueCount();
-    		expandNode.setWinValue(goalScore);
+    		expandNode.v=saveChildNode.v;
+    		expandNode.setWinValue(saveChildNode.winValue);
     		expandNode.setdepthValue(saveParentNode.depth+1);
     		saveParentNode.expand(expandNode);
     	}
@@ -548,7 +552,6 @@ public final class HuffmanBananaGamer extends SampleGamer
             	if(firstPlayoutState) {
             		String huffman=makeHuffmanCode(nextState.toString());
             		selectHuffmanNode=selectHuffmanMemory(huffman);
-
             	}
                	break;
             }
@@ -567,7 +570,9 @@ public final class HuffmanBananaGamer extends SampleGamer
     		System.out.println("OOMOTO :"+n.state);
     		System.out.println("nextsta:"+nextState);
     		System.out.println("huffman:"+selectHuffmanNode.getState());
-    		System.out.println("own win Value:"+selectHuffmanNode.winValue[getOwnRoleNumber()]+", visit times:"+selectHuffmanNode.v);*/
+    		System.out.println("own win Value:"+selectHuffmanNode.winValue[getOwnRoleNumber()]+", visit times:"+selectHuffmanNode.v);
+    		*/
+
     		return returnNode;
     	}
     }
@@ -647,18 +652,16 @@ public final class HuffmanBananaGamer extends SampleGamer
     int showAllCount=0;
     public void showAll(Node n) {
     	showAllCount++;
-    	/*
-    	if(n.depth<=globalDepth) {
+    	//if(n.depth<=globalDepth) {
 
     		System.out.println("--- show all ---");
     		System.out.println(n.state);
     	  	System.out.println(MCTSutils.preprocess(n.state.toString()));
     		System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
     		System.out.println("w/v:::"+n.winValue[getOwnRoleNumber()]/n.v);
-    	}
-    	*/
+    	//}
+
     	if(n.children == null){
-    		System.out.println("HIIIIT");
     		return;
     	}
     	for(MachineState key:n.children.keySet()){
@@ -1034,6 +1037,9 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 }
 		return null;
 	}
+
+
+
 
 
     @Override
