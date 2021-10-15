@@ -1,9 +1,7 @@
 package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -23,13 +21,15 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-
+//0929
 public final class MCTSGamerV2 extends SampleGamer
 {
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	 {
 		 initAll();
+		 System.out.println("start:::start:::start:::start:::start:::start:::start:::start:::start:::start");
+		 System.out.println("apple");
 	 }
     /**
      * Employs a simple sample "Monte Carlo" algorithm.
@@ -57,7 +57,10 @@ public final class MCTSGamerV2 extends SampleGamer
 
         //while(System.currentTimeMillis()<finishBy) {
         for(int i=0;i<500;i++) {
+
         	MonteCalroPlayout(n);
+
+
        	}
 
         /*
@@ -73,24 +76,46 @@ public final class MCTSGamerV2 extends SampleGamer
         globalDepth=n.depth+1;
 
         long stop = System.currentTimeMillis();
+
         showAllCount=0;
         nodeCount=0;
         //showAll(root);
         System.out.println("---     V 2     ----");
+        System.out.println("role number:"+getOwnRoleNumber());
         System.out.println("--- "+kokoko+" turn ----");
+        System.out.println(MCTSutils.preprocess(getCurrentState().toString())+":");
+        System.out.println("time:"+(stop-start));
+
+
         System.out.println(getOwnRoleNumber()+"--show all count;;;"+showAllCount);
         System.out.println(getOwnRoleNumber()+"--nsnull count;;;"+nsnull);
         System.out.println(getOwnRoleNumber()+"--notnsnull count;;;"+notnsnull);
         System.out.println(getOwnRoleNumber()+"--node count;;;"+nodeCount);
         System.out.println(getOwnRoleNumber()+"--expand count;;;"+expandCount);
-//        if(testApple==0)
-  //      	showAll(root);
+        System.out.println("total time:"+totalTime+", count:"+count);
+        System.out.println("else  time:"+elseTotalTime+", count:"+elseCount);
+        System.out.println("average total time:"+((double)totalTime/count));
+        System.out.println("average else  time:"+((double)elseTotalTime/elseCount));
+        System.out.println("total time:"+superTotalTime);
+        System.out.println("average else  time:"+(superTotalTime/500));
+        System.out.println("soto total time:"+sotoTotalTime);
+        System.out.println("what time:"+whatTime);
+        System.out.println("1--isUnecPloe time:"+isUnTime1);
+        System.out.println("2--isUnecPloe time:"+isUnTime2);
+        System.out.println("3--isUnecPloe time:"+isUnTime3);
+        System.out.println("2--random nex time:"+randomNextTime);
+        System.out.println("times of not equal:"+notEqualCount);
+        System.out.println("");
+
+
+        totalTime=0;elseTotalTime=0;count=0;elseCount=0;superTotalTime=0;whatTime=0;
+        sotoTotalTime=0;isUnTime1=0;isUnTime2=0;isUnTime3=0;notEqualCount=0;
+        randomNextTime=0;
         expandCount=0;
         nsnull=0;
         notnsnull=0;
-        System.out.println("");
         kokoko++;
-     	testApple++;
+
     	notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         //System.out.println("error count:::"+errorCount);
         return selection;
@@ -170,7 +195,19 @@ public final class MCTSGamerV2 extends SampleGamer
     }
 
         public int errorCount=0;
+        public long totalTime=0;
+        public long elseTotalTime=0;
+        public long superTotalTime=0;
+        public long sotoTotalTime=0;
+        public long whatTime=0;
+        public long isUnTime1=0;
+        public long isUnTime2=0;
+        public long isUnTime3=0;
+        public long notEqualCount=0;
+        public long randomNextTime=0;
 
+        public int count=0;
+        public int elseCount=0;
     /*
      * 一回のシミュレーションの過程で発生したノードはキューに突っ込む
      */
@@ -189,7 +226,13 @@ public final class MCTSGamerV2 extends SampleGamer
     	while(!theMachine.isTerminal(state)) {
     		int childlenMaxSize=theMachine.getLegalMoves(node.state, theMachine.getRoles().get(playerNum)).size();
     		Node beforeNode=node;
+    		long startstart = System.nanoTime();
+
     		node=selectChildNode(node);
+    	 	long timetime = System.nanoTime()-startstart;
+        	superTotalTime+=timetime;
+
+
      		if(beforeNode.children.size()!=childlenMaxSize && isExpandNode) {
      			/*
      			System.out.println("@@@:"+beforeNode.getState());
@@ -230,8 +273,8 @@ public final class MCTSGamerV2 extends SampleGamer
     	}
     	if(saveChildNode!=null) {
     		Node expandNode=new Node(saveChildNode.getState());
-    		expandNode.visitValueCount();
-    		expandNode.setWinValue(goalScore);
+    		expandNode.v=saveChildNode.v;
+    		expandNode.setWinValue(saveChildNode.winValue);
     		expandNode.setdepthValue(saveParentNode.depth+1);
     		saveParentNode.expand(expandNode);
     	}
@@ -311,10 +354,11 @@ public final class MCTSGamerV2 extends SampleGamer
      	int winValueTotal=0;
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
-
+    		/*
     		System.out.println(MCTSutils.preprocess(key.toString()));
     		System.out.println("child.v:"+child.v);
     		System.out.println("win :"+child.winValue[getOwnRoleNumber()]);
+    		*/
     		winValueTotal += child.winValue[getOwnRoleNumber()];
 
         	if(child.v>bestValue) {
@@ -325,9 +369,10 @@ public final class MCTSGamerV2 extends SampleGamer
 
     	System.out.println("win total:::"+winValueTotal);
 
-
+    	long start=System.currentTimeMillis();
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
-        for(int i=0;i<moves.size();i++) {
+    	whatTime+=System.currentTimeMillis()-start;
+    	for(int i=0;i<moves.size();i++) {
         	Move m=moves.get(i);
         	List<MachineState> stateList=map.get(m);
         	if(stateList.contains(bestState)) {
@@ -346,7 +391,12 @@ public final class MCTSGamerV2 extends SampleGamer
      */
     public Node selectChildNode(Node n) throws MoveDefinitionException, TransitionDefinitionException {
     	Node selectNode=null;
+    	long sotostart = System.nanoTime();
+
+
     	if(isUnexploredState(n)) {
+    		long start = System.nanoTime();
+
     		double saveValue=0;
     		for(MachineState key:n.children.keySet()) {
     			Node child=n.children.get(key);
@@ -356,10 +406,23 @@ public final class MCTSGamerV2 extends SampleGamer
     				selectNode=child;
     			}
     		}
+    		long time = System.nanoTime()-start;
+    		totalTime+=time;
+    		count++;
+
     	}else {
+    		long start = System.nanoTime();
+
     		MachineState state=getUnexploredNextState(n);
     		selectNode=new Node(state);
+
+    		long time = System.nanoTime()-start;
+    		elseTotalTime+=time;
+    		elseCount++;
+
     	}
+		long sototime = System.nanoTime()-sotostart;
+		sotoTotalTime+=sototime;
 
     	return selectNode;
 
@@ -400,18 +463,17 @@ public final class MCTSGamerV2 extends SampleGamer
      * Return true if argument Node has child nodes that are all kinds of next board information.
      */
     public boolean isUnexploredState(Node n) throws MoveDefinitionException, TransitionDefinitionException {
+
     	StateMachine theMachine = getStateMachine();
     	if(n.children==null)
     		return false;
 
       	int nodeSize=n.children.size();
+       	int nextSize=theMachine.getLegalMoves(n.state, theMachine.getRoles().get(playerNum)).size();
 
-    	List<MachineState> l=theMachine.getNextStates(n.state);
-    	List<MachineState> nextStates=new ArrayList<MachineState>(new HashSet<>(l));
-    	if(nodeSize==nextStates.size()) {
+    	if(nodeSize==nextSize) {
     		return true;
     	}
-
     	return false;
     }
 
@@ -425,8 +487,23 @@ public final class MCTSGamerV2 extends SampleGamer
     	 MachineState nextState;
 
     	while(true) {
+    		/*
+    		long start = System.nanoTime();
     		List<Move> a=theMachine.getRandomJointMove(n.getState());
+    	 	long time = System.nanoTime()-start;
+        	isUnTime1+=time;
+
+        	start = System.nanoTime();
     		nextState = theMachine.getNextState(n.getState(),a );
+    		time = System.nanoTime()-start;
+        	isUnTime2+=time;
+        	*/
+
+        	long start = System.nanoTime();
+        	nextState=theMachine.getRandomNextState(n.getState());
+    		long time = System.nanoTime()-start;
+        	randomNextTime+=time;
+
             if(!n.children.containsKey(nextState)) {
                	break;
             }
@@ -438,7 +515,7 @@ public final class MCTSGamerV2 extends SampleGamer
      * Search the same Node as the argument Node in constructed tree.
      */
     public Node nodeSearch(Node n,MachineState key){
-		if(n.children==null) {
+		if(n==null) {
     		return null;
     	}
 	    if(n.state.equals(key)){
@@ -550,10 +627,6 @@ public final class MCTSGamerV2 extends SampleGamer
     		return true;
     	return false;
 	}
-
-
-
-
 
 
     @Override

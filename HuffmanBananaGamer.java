@@ -1,9 +1,7 @@
 package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -193,11 +191,15 @@ public final class HuffmanBananaGamer extends SampleGamer
 				System.out.println(i+":win---"+apple.winValue[i]);
 			System.out.println("visit---"+apple.v);
     	}*/
+    	icchi=hsCount;
     	System.out.println("icchi:"+icchi);
+     	System.out.println("super icchi:"+superIcchi);
      	System.out.println("semi icchi:"+semiIcchi);
+     	System.out.println("semi semi icchi:"+semisemiIcchi);
      	System.out.println("honto:"+honto);
     	System.out.println("hs count:"+hsCount);
-    	icchi=0;semiIcchi=0;hsCount=0;
+    	System.out.println("get unex count:"+getUnCount);
+    	icchi=0;semiIcchi=0;semisemiIcchi=0;hsCount=0;superIcchi=0;
     	System.out.println("new count:"+newCount);
      	System.out.println("bad count:"+badCount);
      	System.out.println("semibad count:"+semibadCount);
@@ -205,13 +207,13 @@ public final class HuffmanBananaGamer extends SampleGamer
     	System.out.println("crash count:"+crashCount);
     	System.out.println(this.makeHuffmanCode(getCurrentState().toString()));
     	badCount=0;semibadCount=0;elsebadCount=0;crashCount=0;newCount=0;elsebadCount=0;
-
+    	/*
     	System.out.println("banana: "+selectGetCount);
     	   if(turn<2)
            	showAll(root);
-
     	selectGetCount=0;
-    	System.out.println();
+	   	System.out.println();
+	   	*/
     	/*
     	if(honto==0) {
     		for(long l:huffmanMemorys.keySet()) {
@@ -454,6 +456,7 @@ public final class HuffmanBananaGamer extends SampleGamer
     			}
     		}
     	}else {
+    		getUnCount++;
     		selectNode=getUnexploredNextNode(n);
     		firstPlayoutState=false;
     	}
@@ -502,10 +505,9 @@ public final class HuffmanBananaGamer extends SampleGamer
     		return false;
 
       	int nodeSize=n.children.size();
+      	int nextSize=theMachine.getLegalMoves(n.state, theMachine.getRoles().get(playerNum)).size();
 
-    	List<MachineState> l=theMachine.getNextStates(n.state);
-    	List<MachineState> nextStates=new ArrayList<MachineState>(new HashSet<>(l));
-    	if(nodeSize==nextStates.size()) {
+    	if(nodeSize==nextSize) {
     		return true;
     	}
 
@@ -552,6 +554,11 @@ public final class HuffmanBananaGamer extends SampleGamer
             	if(firstPlayoutState) {
             		String huffman=makeHuffmanCode(nextState.toString());
             		selectHuffmanNode=selectHuffmanMemory(huffman);
+            		if(selectHuffmanNode!=null) {
+            			if(selectHuffmanNode.getState().equals(nextState)) {
+            				superIcchi++;
+            			}
+            		}
             	}
                	break;
             }
@@ -964,6 +971,9 @@ public final class HuffmanBananaGamer extends SampleGamer
 
 	public int icchi=0;
 	public int semiIcchi=0;
+	public int semisemiIcchi=0;
+	public int superIcchi=0;
+	public int getUnCount=0;
 	public int hsCount=0;
 	public int honto=0;
 	public Node selectHuffmanMemory(String state) {
@@ -975,13 +985,16 @@ public final class HuffmanBananaGamer extends SampleGamer
 			key=key^hs.code[i];
 		}
 		 matchNode=matchHashCode(key,hs);
-
+		 /*
 		 if(matchNode!=null) {
 			 hsCount++;
 		     return matchNode;
 		 }
 		 return matchNode;
-		/*
+		 */
+		 if(matchNode!=null) {
+			 hsCount++;
+		 }
 		 Node similarNode=new Node(null);
 		 similarNode=searchSimilarHash(0,1,key,similarNode);
 
@@ -995,15 +1008,12 @@ public final class HuffmanBananaGamer extends SampleGamer
 			 returnNode.v+=similarNode.v;
 		 }
 
-		 if(honto==0) {
-			 System.out.println("after");
-			 System.out.println("win---"+returnNode.winValue[0]+", v---"+returnNode.v);
-		 }
-
 		 if(returnNode.v==0) {
 			 return null;
 		 }
-		return returnNode;*/
+		return returnNode;
+
+
 	}
 
 	public Node searchSimilarHash(int start,int depth, long hash,Node saveNode ){
@@ -1018,7 +1028,10 @@ public final class HuffmanBananaGamer extends SampleGamer
 				Node n=huffmanMemorys.get(subHash).n;
 				saveNode.setWinValue(n.winValue);
 				saveNode.v+=n.v;
-				semiIcchi++;
+				if(depth==2)
+					semiIcchi++;
+				if(depth==1)
+					semisemiIcchi++;
 			}
 			saveNode=searchSimilarHash(i+1,depth-1,subHash,saveNode);
 		}

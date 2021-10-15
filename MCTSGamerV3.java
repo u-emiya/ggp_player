@@ -3,7 +3,6 @@ package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -495,9 +494,8 @@ public final class MCTSGamerV3 extends SampleGamer
 
       	int nodeSize=n.children.size();
 
-    	List<MachineState> l=theMachine.getNextStates(n.state);
-    	List<MachineState> nextStates=new ArrayList<MachineState>(new HashSet<>(l));
-    	if(nodeSize==nextStates.size()) {
+    	int nextSize=theMachine.getLegalMoves(n.state, theMachine.getRoles().get(playerNum)).size();
+    	if(nodeSize==nextSize) {
     		return true;
     	}
 
