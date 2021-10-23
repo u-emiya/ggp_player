@@ -42,6 +42,7 @@ public final class MCTSGamerV2 extends SampleGamer
         StateMachine theMachine = getStateMachine();
         long start = System.currentTimeMillis();
         long finishBy = timeout - 1000;
+        long startnano = System.nanoTime();
 
         //removePlayoutMemory();
 
@@ -76,6 +77,8 @@ public final class MCTSGamerV2 extends SampleGamer
         globalDepth=n.depth+1;
 
         long stop = System.currentTimeMillis();
+        long stopnano = System.nanoTime();
+
 
         showAllCount=0;
         nodeCount=0;
@@ -85,6 +88,7 @@ public final class MCTSGamerV2 extends SampleGamer
         System.out.println("--- "+kokoko+" turn ----");
         System.out.println(MCTSutils.preprocess(getCurrentState().toString())+":");
         System.out.println("time:"+(stop-start));
+        System.out.println("time nano:"+(stopnano-startnano));
 
 
         System.out.println(getOwnRoleNumber()+"--show all count;;;"+showAllCount);
@@ -104,12 +108,16 @@ public final class MCTSGamerV2 extends SampleGamer
         System.out.println("2--isUnecPloe time:"+isUnTime2);
         System.out.println("3--isUnecPloe time:"+isUnTime3);
         System.out.println("2--random nex time:"+randomNextTime);
+        System.out.println("2--random else time:"+elseTimes);
         System.out.println("times of not equal:"+notEqualCount);
         System.out.println("");
+        System.out.println("apple time:"+appleTime);
+        System.out.println("after time:"+aftersuperTotalTime);
+         System.out.println("");
 
 
         totalTime=0;elseTotalTime=0;count=0;elseCount=0;superTotalTime=0;whatTime=0;
-        sotoTotalTime=0;isUnTime1=0;isUnTime2=0;isUnTime3=0;notEqualCount=0;
+        sotoTotalTime=0;isUnTime1=0;isUnTime2=0;isUnTime3=0;notEqualCount=0;elseTimes=0;
         randomNextTime=0;
         expandCount=0;
         nsnull=0;
@@ -183,14 +191,6 @@ public final class MCTSGamerV2 extends SampleGamer
     	    this.children.put(n.state,n);
     	}
 
-    	public boolean hasChild(MachineState state) {
-    		for(MachineState key:this.children.keySet()) {
-    			if(key.equals(state)) {
-    				return true;
-    			}
-    		}
-    		return false;
-    	}
 
     }
 
@@ -206,8 +206,13 @@ public final class MCTSGamerV2 extends SampleGamer
         public long notEqualCount=0;
         public long randomNextTime=0;
 
+        public long appleTime=0;
+        public long aftersuperTotalTime=0;
+
         public int count=0;
         public int elseCount=0;
+        public int elseTimes=0;
+
     /*
      * 一回のシミュレーションの過程で発生したノードはキューに突っ込む
      */
@@ -222,7 +227,7 @@ public final class MCTSGamerV2 extends SampleGamer
 
     	boolean isExpandNode=true;
 
-
+    	long applestart= System.nanoTime();
     	while(!theMachine.isTerminal(state)) {
     		int childlenMaxSize=theMachine.getLegalMoves(node.state, theMachine.getRoles().get(playerNum)).size();
     		Node beforeNode=node;
@@ -231,7 +236,6 @@ public final class MCTSGamerV2 extends SampleGamer
     		node=selectChildNode(node);
     	 	long timetime = System.nanoTime()-startstart;
         	superTotalTime+=timetime;
-
 
      		if(beforeNode.children.size()!=childlenMaxSize && isExpandNode) {
      			/*
@@ -249,6 +253,8 @@ public final class MCTSGamerV2 extends SampleGamer
       		playerNum=(playerNum+1)%(theMachine.getRoles().size());
 
      	}
+	 	long  applestop= System.nanoTime()-applestart;
+		appleTime+=applestop;
 
 
     	List<Role> roleList=theMachine.getRoles();
@@ -326,18 +332,6 @@ public final class MCTSGamerV2 extends SampleGamer
     	}*/
 
     	//System.out.println("--- select next play ---");
-    	for(MachineState key:n.children.keySet()) {
-    		Node child=n.children.get(key);
-    		child.winRateCalculation();
-    		if(child.winRate[getOwnRoleNumber()]>1.0) {
-    			System.out.println(MCTSutils.preprocess(key.toString()));
-    			System.out.println("child.v:"+child.v);
-    			System.out.println("win value:"+child.winValue[getOwnRoleNumber()]);
-    			System.out.println("winRate:"+child.winRate[getOwnRoleNumber()]);
-    			System.out.println();
-    		}
-
-    	}
     	return;
     }
     /*
@@ -369,9 +363,9 @@ public final class MCTSGamerV2 extends SampleGamer
 
     	System.out.println("win total:::"+winValueTotal);
 
-    	long start=System.currentTimeMillis();
+    	long start=System.nanoTime();
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
-    	whatTime+=System.currentTimeMillis()-start;
+    	whatTime+=System.nanoTime()-start;
     	for(int i=0;i<moves.size();i++) {
         	Move m=moves.get(i);
         	List<MachineState> stateList=map.get(m);
@@ -485,28 +479,29 @@ public final class MCTSGamerV2 extends SampleGamer
     public MachineState getUnexploredNextState(Node n) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
     	 MachineState nextState;
-
+    		long start,time;
     	while(true) {
     		/*
-    		long start = System.nanoTime();
+    		 start = System.nanoTime();
     		List<Move> a=theMachine.getRandomJointMove(n.getState());
-    	 	long time = System.nanoTime()-start;
+    	 	 time = System.nanoTime()-start;
         	isUnTime1+=time;
 
         	start = System.nanoTime();
-    		nextState = theMachine.getNextState(n.getState(),a );
+        	nextState = theMachine.getNextState(n.getState(),a);
     		time = System.nanoTime()-start;
         	isUnTime2+=time;
         	*/
 
-        	long start = System.nanoTime();
+        	start = System.nanoTime();
         	nextState=theMachine.getRandomNextState(n.getState());
-    		long time = System.nanoTime()-start;
+        	time = System.nanoTime()-start;
         	randomNextTime+=time;
 
             if(!n.children.containsKey(nextState)) {
                	break;
-            }
+            }else
+            	elseTimes++;
     	}
     	return nextState;
     }
