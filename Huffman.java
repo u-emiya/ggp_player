@@ -1,4 +1,4 @@
-package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
+ package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayList;
 import java.util.Collections;
