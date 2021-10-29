@@ -34,6 +34,8 @@ public final class HuffmanAppleGamer extends SampleGamer
 	 MCTSutils mu=new MCTSutils();
 	 public static final int HASHSIZE=63;
 
+	 static String  spaceHash="";
+
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	 {
@@ -84,6 +86,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 		 System.out.println("all of appear map");
 		 for(String ccc:appearMap.keySet()) {
 			 System.out.println(ccc+"::"+appearMap.get(ccc));
+
 		 }
 
 		 System.out.println("all of ward to char map");
@@ -98,6 +101,8 @@ public final class HuffmanAppleGamer extends SampleGamer
 		 System.out.println("all of huffman hash map");
 		 for(String s:haffmanHashMap.keySet()) {
 			 System.out.println(wardToCharMap.get(s)+":::"+s+"---"+haffmanHashMap.get(s));
+			 if(s.equals("¥"))
+				 spaceHash=haffmanHashMap.get(s);
 		 }
 		 System.out.println(test);
 		 System.out.println("MAX(x,y) = ("+boardSize[0]+","+boardSize[1]+")");
@@ -153,12 +158,12 @@ public final class HuffmanAppleGamer extends SampleGamer
 
 
         System.out.println("time:"+(stop-start));
+
         System.out.println();
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         return selection;
     }
-
     /*
      * select next legal move
      * the return type is Move
@@ -177,7 +182,6 @@ public final class HuffmanAppleGamer extends SampleGamer
         		bestState=key;
         	}
     	}
-
 
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
         for(int i=0;i<moves.size();i++) {
@@ -210,7 +214,8 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     public class Node{
     	int v; //times of visited
-    	MachineState state;//Board information
+      	int selectionCount; //times of visited
+      	MachineState state;//Board information
     	int depth;//depth from root node
     	Map<MachineState ,Node> children;//all of child node
 
@@ -219,6 +224,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     	Node(MachineState state){
     		this.v=0;
+    		this.selectionCount=0;
     	    this.state=state;
     	    this.depth=0;
     	    this.children= new HashMap<MachineState ,HuffmanAppleGamer.Node>();
@@ -242,6 +248,9 @@ public final class HuffmanAppleGamer extends SampleGamer
     	public void visitValueCount() {
     		this.v++;
     	}
+    	public void selectCount() {
+    		this.selectionCount++;
+    	}
 
      	public void winRateCalculation() {
     		if(v!=0) {
@@ -258,6 +267,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     	public void expand(Node n){
     	    this.children.put(n.state,n);
+    	    n.selectCount();
     	}
 
     }
@@ -314,6 +324,7 @@ public final class HuffmanAppleGamer extends SampleGamer
         	}
     		String huffman=makeHuffmanCode(v.state.toString());
     		addHufMemo(huffman,v,goalScore);
+    		v.selectCount();
     		parent=v;
     	}
     	if(saveChildNode!=null) {
@@ -420,7 +431,6 @@ public final class HuffmanAppleGamer extends SampleGamer
     		nextState = theMachine.getNextState(n.getState(),a );
             if(!n.children.containsKey(nextState)) {
             	if(firstPlayoutState) {
-            		System.out.println("ORIGINAL:"+mu.preprocess(nextState.toString()));
             		String huffman=makeHuffmanCode(nextState.toString());
             		selectHuffmanNode=selectHuffmanMemory(huffman);
             	}
@@ -564,10 +574,20 @@ public final class HuffmanAppleGamer extends SampleGamer
 					result="";
 				}
 			}
+			String border,padding;
+			if(spaceHash.equals("0")) {
+				border="1";
+				padding="0";
+			}else {
+				border="0";
+				padding="1";
+			}
+
+
 			if(result.length()>0) {
-				result+="1";
+				result+=border;
 				for(int i=result.length();i<HASHSIZE;i++)
-					result+="0";
+					result+=padding;
 
 				code[size++]=Long.parseLong(result,2);
 			}
@@ -633,21 +653,11 @@ public final class HuffmanAppleGamer extends SampleGamer
 		     return matchNode;
 		 }
 		 return matchNode;
-		*/
+		 */
 		 Node similarNode=new Node(null);
-		 System.out.println("ORIGINAL --- ORIGINAL --- ORIGINAL --- ORIGINAL --- ORIGINAL");
-		 System.out.println("state:"+state);
-		 System.out.println("key:"+Long.toBinaryString(key)+", length:"+Long.toBinaryString(key).length());
-		 for(int i=0;i<hs.size;i++) {
-			 long l=hs.code[i];
-			 System.out.println(Long.toBinaryString(l));
-		 }
-		 System.out.println();
-		 System.out.println();
+
+		 originalHash=key;
 		 similarNode=searchSimilarHash(0,2,key,similarNode);
-		 System.out.println("similar :"+similarCount);
-		 System.out.println();
-		 similarCount=0;
 		 Node returnNode=new Node(getCurrentState());
 		 if(matchNode!=null) {
 			 returnNode.setWinValue(matchNode.winValue);
@@ -664,7 +674,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 		return returnNode;
 
 	}
-	public int similarCount=0;
+	public long originalHash=0;
 
 	public Node searchSimilarHash(int start,int depth, long hash,Node saveNode ){
 		long subHash=0;
@@ -674,21 +684,12 @@ public final class HuffmanAppleGamer extends SampleGamer
 			long a=(long)Math.pow(2, i);
 			subHash=hash^a;
 			if(huffmanMemorys.containsKey(subHash)) {
-				Node n=huffmanMemorys.get(subHash).n;
-				saveNode.setWinValue(n.winValue);
-				saveNode.v+=n.v;
-				//test1021
-				similarCount++;
-				System.out.println("humming length:"+(3-depth));
-				System.out.println("state:"+mu.preprocess(n.state.toString()));
-				System.out.println("key:"+Long.toBinaryString(subHash));
-				System.out.println("code--size:"+huffmanMemorys.get(subHash).size);
-				 for(int j=0;j<huffmanMemorys.get(subHash).size;j++) {
-					 long l=huffmanMemorys.get(subHash).code[j];
-					 System.out.print(Long.toBinaryString(l));
+				if(searchSimilarTwoBitLength(originalHash,subHash)<6) {
+					Node n=huffmanMemorys.get(subHash).n;
+					saveNode.setWinValue(n.winValue);
+					saveNode.v+=n.v;
+
 				}
-				System.out.println();
-				System.out.println();
 			}
 			saveNode=searchSimilarHash(i+1,depth-1,subHash,saveNode);
 		}
@@ -707,6 +708,24 @@ public final class HuffmanAppleGamer extends SampleGamer
 		return null;
 	}
 
+	public int searchSimilarTwoBitLength(long l1, long l2) {
+
+		long result=l1^l2;
+		String xorStr=Long.toBinaryString(result);
+		int flag =-1;
+		int inx=0;
+		for(inx=0;inx<xorStr.length();inx++) {
+			char cc=xorStr.charAt(inx);
+			if(cc=='1') {
+				if(flag==-1)
+					flag=inx;
+				else
+					break;
+			}
+		}
+		int length=inx-flag-1;
+		return length;
+	}
 
 
 
@@ -725,7 +744,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     @Override
     public String getName() {
-        return "HuffmanApplePlayer";
+        return "HuffmanCherryPlayer";
     }
 
     @Override
