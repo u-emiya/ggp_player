@@ -33,7 +33,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 	 Map<String,Integer> appearMap=new HashMap<>();
 	 MCTSutils mu=new MCTSutils();
 	 public static final int HASHSIZE=63;
-
+	 //for making hash border
 	 static String  spaceHash="";
 
 	 @Override
