@@ -23,7 +23,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-//1020
+//1029
 public final class HuffmanAppleGamer extends SampleGamer
 {
 	//int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
@@ -177,8 +177,8 @@ public final class HuffmanAppleGamer extends SampleGamer
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
 
-    		if(child.v>bestValue) {
-        		bestValue=child.v;
+     		if(child.selectionCount>bestValue) {
+        		bestValue=child.selectionCount;
         		bestState=key;
         	}
     	}
@@ -744,7 +744,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     @Override
     public String getName() {
-        return "HuffmanCherryPlayer";
+        return "HuffmanApplePlayer";
     }
 
     @Override
