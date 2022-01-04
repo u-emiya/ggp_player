@@ -90,7 +90,7 @@ public final class MCTSGamerV2 extends SampleGamer
         System.out.println("time:"+(stop-start));
         System.out.println("time nano:"+(stopnano-startnano));
 
-
+/*
         System.out.println(getOwnRoleNumber()+"--show all count;;;"+showAllCount);
         System.out.println(getOwnRoleNumber()+"--nsnull count;;;"+nsnull);
         System.out.println(getOwnRoleNumber()+"--notnsnull count;;;"+notnsnull);
@@ -114,7 +114,7 @@ public final class MCTSGamerV2 extends SampleGamer
         System.out.println("apple time:"+appleTime);
         System.out.println("after time:"+aftersuperTotalTime);
          System.out.println("");
-
+*/
 
         totalTime=0;elseTotalTime=0;count=0;elseCount=0;superTotalTime=0;whatTime=0;
         sotoTotalTime=0;isUnTime1=0;isUnTime2=0;isUnTime3=0;notEqualCount=0;elseTimes=0;

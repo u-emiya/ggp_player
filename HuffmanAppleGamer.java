@@ -40,6 +40,8 @@ public final class HuffmanAppleGamer extends SampleGamer
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	 {
 		 initAll();
+
+	     turn=0;
 		 System.out.println("start:::start:::start:::start:::start:::start:::start:::start:::start:::start");
 		 long finishBy = timeout - 1000;
 
@@ -148,18 +150,6 @@ public final class HuffmanAppleGamer extends SampleGamer
         globalDepth=n.depth+1;
 
         long stop = System.currentTimeMillis();
-        System.out.println(":"+MCTSutils.preprocess(getCurrentState().toString())+":");
-
-    	System.out.println("select moves:"+selection);
-    	showAll(root);
-        System.out.println("MCTS node size:"+showAllCount);
-        showAllCount=0;
-        System.out.println("huffman memory size:"+huffmanMemorys.size());
-
-
-        System.out.println("time:"+(stop-start));
-
-        System.out.println();
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         return selection;
@@ -167,6 +157,7 @@ public final class HuffmanAppleGamer extends SampleGamer
     /*
      * select next legal move
      * the return type is Move
+     * changed the way to next state from child.v to child.selectionCount
      */
     public Move selectNextPlay(Node n,List<Move> moves) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
@@ -276,7 +267,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     public boolean firstPlayoutState=true;
     /*
-     * 一回のシミュレーションの過程で発生したノードはキューに突っ込む
+     * Playing MCTS method.
      */
     public void MonteCalroPlayout(Node n) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
     	StateMachine theMachine = getStateMachine();
@@ -288,6 +279,7 @@ public final class HuffmanAppleGamer extends SampleGamer
     	playerNum=getCurrentPlayerNum();
     	boolean isExpandNode=true;
 
+    	//Playing simulation until final state is reached.
     	while(!theMachine.isTerminal(state)) {
     		int childlenMaxSize=theMachine.getLegalMoves(node.state, theMachine.getRoles().get(playerNum)).size();
     		Node beforeNode=node;
@@ -303,7 +295,7 @@ public final class HuffmanAppleGamer extends SampleGamer
      	}
 		firstPlayoutState=true;
 
-
+		//Calculate rewards for all of players
     	List<Role> roleList=theMachine.getRoles();
     	int[] goalScore=new int[totalPlayerNumber];
     	for(int i=0;i<totalPlayerNumber;i++) {
@@ -312,8 +304,9 @@ public final class HuffmanAppleGamer extends SampleGamer
     	}
 
     	/*
-    	 * シミュレーションの過程で発生した盤面情報をHuffmanメモリに保存する。
-    	 * この時にキューに保存しているノードに訪れた回数、報酬を記録する。
+    	 * The board information generated in the course of the simulation is stored
+    	 * in the search experience.
+    	 * At this time, the node stored in the queue is recorded visited times and reward.
     	 */
       	Node parent=null;
       	for (Node v : que) {
@@ -395,6 +388,25 @@ public final class HuffmanAppleGamer extends SampleGamer
     	return uctValue;
     }
 
+
+    /*
+     * this method uses selectionCount in UCT calculation.
+     */
+    public double uctCalculationV2(Node parent,Node child) {
+    	double logVisitedValue=Math.log(parent.selectionCount);
+    	double searchValue=0;
+    	double C=0.7;
+
+    	if(child.selectionCount!=0) {
+    		searchValue=Math.sqrt(logVisitedValue/child.selectionCount);
+    	}else {
+    		searchValue=Double.MAX_VALUE;
+    	}
+     	child.winRateCalculation();//mark!!
+     	double uctValue=child.winRate[playerNum]+C*searchValue;
+
+    	return uctValue;
+    }
     /*
      * Return true if argument Node has child nodes that are all kinds of next board information.
      */
@@ -431,6 +443,7 @@ public final class HuffmanAppleGamer extends SampleGamer
     		nextState = theMachine.getNextState(n.getState(),a );
             if(!n.children.containsKey(nextState)) {
             	if(firstPlayoutState) {
+            		//System.out.println("ORIGINAL:"+mu.preprocess(nextState.toString()));
             		String huffman=makeHuffmanCode(nextState.toString());
             		selectHuffmanNode=selectHuffmanMemory(huffman);
             	}
@@ -562,6 +575,9 @@ public final class HuffmanAppleGamer extends SampleGamer
 			this.n=n;
 		}
 
+		/*
+		 * Divide bit string of the argument into 64-digit segments.
+		 */
 		public void setCode(String str) {
 			char c[]=str.toCharArray();
 			String result="";
@@ -583,7 +599,6 @@ public final class HuffmanAppleGamer extends SampleGamer
 				padding="1";
 			}
 
-
 			if(result.length()>0) {
 				result+=border;
 				for(int i=result.length();i<HASHSIZE;i++)
@@ -593,6 +608,9 @@ public final class HuffmanAppleGamer extends SampleGamer
 			}
 		}
 
+		/*
+		 * Update node information
+		 */
 		public void updateNode(int[] goalScore,int depth) {
 			this.n.visitValueCount();
 			this.n.setWinValue(goalScore);
@@ -601,6 +619,9 @@ public final class HuffmanAppleGamer extends SampleGamer
 		}
 	}
 
+	/*
+	 *  make the hash value by huffmanCode from argument state
+	 */
 	public String makeHuffmanCode(String state) {
 		state=mu.preprocess(state);
 		state=mu.wtnInboardInformation(state);
@@ -610,7 +631,10 @@ public final class HuffmanAppleGamer extends SampleGamer
 
 		return hash;
 	}
-
+	/*
+	 * Record information about the argument in the search experience.
+	 * hash key is bit string about the state, hash value is huffmanSet
+	 */
 	public void addHufMemo(String hash,Node n,int[] goalScore) {
 
 		Node m=new Node(n.state);
@@ -638,7 +662,10 @@ public final class HuffmanAppleGamer extends SampleGamer
 		}
 
 	}
-
+	/*
+	 * return Node which have the sum of all the information of the selected nodes
+	 * from the search experience.
+	 */
 	public Node selectHuffmanMemory(String state) {
 		Node matchNode=null;
 		huffmanSet hs=new huffmanSet(state,null);
@@ -649,15 +676,27 @@ public final class HuffmanAppleGamer extends SampleGamer
 		}
 		 matchNode=matchHashCode(key,hs);
 		 /*
+		  * if you want to get the same information as argument state from the search experience,
+		  * Use if(matchNode!=null) ~   return matchNode; and Set the comment out   Node similarNode=new Node(null); ~ return returnNode;
+		  */
+		 /*
 		 if(matchNode!=null) {
+			 getSimilarCount++;
 		     return matchNode;
 		 }
 		 return matchNode;
 		 */
-		 Node similarNode=new Node(null);
-
 		 originalHash=key;
+		 /*
+		  * if you want to get the information similar to the argument state from the search experience,
+		  * Use   Node similarNode=new Node(null); ~ return returnNode; and Set the comment out if(matchNode!=null) ~   return matchNode;
+		  */
+		 Node similarNode=new Node(null);
+		 /*
+		  * searchSimilarHash's second argument is hamming length
+		  */
 		 similarNode=searchSimilarHash(0,2,key,similarNode);
+
 		 Node returnNode=new Node(getCurrentState());
 		 if(matchNode!=null) {
 			 returnNode.setWinValue(matchNode.winValue);
@@ -674,8 +713,12 @@ public final class HuffmanAppleGamer extends SampleGamer
 		return returnNode;
 
 	}
-	public long originalHash=0;
 
+	public long originalHash=0;//use to calculate hamming length
+	/*
+	 * Recursive function
+	 * Finally, return Node which has sum of similar state visit times and values.
+	 */
 	public Node searchSimilarHash(int start,int depth, long hash,Node saveNode ){
 		long subHash=0;
 		if(depth==0)
@@ -684,18 +727,20 @@ public final class HuffmanAppleGamer extends SampleGamer
 			long a=(long)Math.pow(2, i);
 			subHash=hash^a;
 			if(huffmanMemorys.containsKey(subHash)) {
-				if(searchSimilarTwoBitLength(originalHash,subHash)<6) {
+				//if(searchSimilarTwoBitLength(originalHash,subHash)<6) {
 					Node n=huffmanMemorys.get(subHash).n;
 					saveNode.setWinValue(n.winValue);
 					saveNode.v+=n.v;
 
-				}
+				//}
 			}
 			saveNode=searchSimilarHash(i+1,depth-1,subHash,saveNode);
 		}
 		return saveNode;
 	}
-
+	/*
+	 * return Node same as hash key about first argument from Exploration Experience.
+	 */
 	public  Node matchHashCode(long l,huffmanSet hs) {
 		if(huffmanMemorys.containsKey(l)) {
 			 huffmanSet semiHs=huffmanMemorys.get(l);
@@ -707,7 +752,9 @@ public final class HuffmanAppleGamer extends SampleGamer
 		 }
 		return null;
 	}
-
+	/*
+	 * return humming length calculated from two argumentsz
+	 */
 	public int searchSimilarTwoBitLength(long l1, long l2) {
 
 		long result=l1^l2;
