@@ -24,6 +24,7 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
 //1029
+//add comment 0104
 public final class HuffmanAppleGamer extends SampleGamer
 {
 	//int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
