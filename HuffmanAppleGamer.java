@@ -1,6 +1,7 @@
 package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-//1029
+//0205
 //add comment 0104
 public final class HuffmanAppleGamer extends SampleGamer
 {
@@ -107,6 +108,14 @@ public final class HuffmanAppleGamer extends SampleGamer
 			 if(s.equals("¥"))
 				 spaceHash=haffmanHashMap.get(s);
 		 }
+		 //mu.fixedLengthHuffman(haffmanHashMap);
+		 System.out.println("AFTER-----all of huffman hash map");
+		 for(String s:haffmanHashMap.keySet()) {
+			 System.out.println(wardToCharMap.get(s)+":::"+s+"---"+haffmanHashMap.get(s));
+			 if(s.equals("¥"))
+				 spaceHash=haffmanHashMap.get(s);
+		 }
+
 		 System.out.println(test);
 		 System.out.println("MAX(x,y) = ("+boardSize[0]+","+boardSize[1]+")");
 		 System.out.println("MIN(x,y) = ("+boardSize[2]+","+boardSize[3]+")");
@@ -149,7 +158,28 @@ public final class HuffmanAppleGamer extends SampleGamer
         	selection=selectNextPlay(n,moves);
         }
         globalDepth=n.depth+1;
-
+        //test0205
+        int oneSize=0;
+        int twoSize=0;
+        huffmanSet saveHs=null;
+        for(long l:huffmanMemorys.keySet()) {
+        	huffmanSet hs=huffmanMemorys.get(l);
+        	if(hs.size==1)
+        		oneSize++;
+        	else if(hs.size==2) {
+        		twoSize++;
+        		saveHs=hs;
+        	}
+        }
+        System.out.println("one size:"+oneSize);
+        System.out.println("two size:"+twoSize);
+        System.out.println("total si:"+huffmanMemorys.size());
+        Long[] ll=new Long[2];
+        ll[0]=saveHs.code[0];
+        ll[1]=saveHs.code[1];
+        for(long l:ll)
+        	System.out.println(l);
+        System.out.println(Arrays.hashCode(ll));
         long stop = System.currentTimeMillis();
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
@@ -206,7 +236,7 @@ public final class HuffmanAppleGamer extends SampleGamer
 
     public class Node{
     	int v; //times of visited
-      	int selectionCount; //times of visited
+      	int selectionCount; //times of actual selected node
       	MachineState state;//Board information
     	int depth;//depth from root node
     	Map<MachineState ,Node> children;//all of child node

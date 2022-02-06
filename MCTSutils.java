@@ -415,6 +415,27 @@ public class MCTSutils {
 
 	}
 
+	public static void fixedLengthHuffman( Map<String,String> huffmanMap) {
+		int maxLength=0;
+		String padding="";
+		for(String s:huffmanMap.keySet()) {
+			if(huffmanMap.get(s).length()>maxLength)
+				maxLength=huffmanMap.get(s).length();
+			if(s.equals("¥"))
+				padding=huffmanMap.get(s).substring(0,1);
+		}
+		for(String s:huffmanMap.keySet()) {
+			if(huffmanMap.get(s).length()<maxLength) {
+				String str=huffmanMap.get(s);
+				for(int i=huffmanMap.get(s).length();i<maxLength;i++) {
+					str+=padding;
+				}
+				huffmanMap.replace(s, str);
+			}
+
+		}
+	}
+
 
 
 }

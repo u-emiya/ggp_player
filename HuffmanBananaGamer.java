@@ -23,7 +23,8 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-//0929
+//1029
+//add comment 0104
 public final class HuffmanBananaGamer extends SampleGamer
 {
 	//int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
@@ -33,11 +34,15 @@ public final class HuffmanBananaGamer extends SampleGamer
 	 Map<String,Integer> appearMap=new HashMap<>();
 	 MCTSutils mu=new MCTSutils();
 	 public static final int HASHSIZE=63;
+	 //for making hash border
+	 static String  spaceHash="";
 
 	 @Override
 	 public void stateMachineMetaGame(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	 {
 		 initAll();
+
+	     turn=0;
 		 System.out.println("start:::start:::start:::start:::start:::start:::start:::start:::start:::start");
 		 long finishBy = timeout - 1000;
 
@@ -68,7 +73,6 @@ public final class HuffmanBananaGamer extends SampleGamer
 
 
 		 for(int i=0;i<max+1;i++) {
-		 //for(i=0;i<10;i++) {
 			 if(wardToCharMap.containsKey(Integer.toString(i))) {
 				 appearMap.remove(Integer.toString(i));
 				 wardToCharMap.remove(Integer.toString(i));
@@ -85,6 +89,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 System.out.println("all of appear map");
 		 for(String ccc:appearMap.keySet()) {
 			 System.out.println(ccc+"::"+appearMap.get(ccc));
+
 		 }
 
 		 System.out.println("all of ward to char map");
@@ -99,11 +104,12 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 System.out.println("all of huffman hash map");
 		 for(String s:haffmanHashMap.keySet()) {
 			 System.out.println(wardToCharMap.get(s)+":::"+s+"---"+haffmanHashMap.get(s));
+			 if(s.equals("¥"))
+				 spaceHash=haffmanHashMap.get(s);
 		 }
 		 System.out.println(test);
 		 System.out.println("MAX(x,y) = ("+boardSize[0]+","+boardSize[1]+")");
 		 System.out.println("MIN(x,y) = ("+boardSize[2]+","+boardSize[3]+")");
-		 //test=mu.makePerfectBoard(test,boardSize);
 		 test=mu.makePafeBoard(test);
 		 System.out.println(test);
 		 System.out.println("length:"+test.length());
@@ -120,31 +126,22 @@ public final class HuffmanBananaGamer extends SampleGamer
     {
         StateMachine theMachine = getStateMachine();
         long start = System.currentTimeMillis();
-        long finishBy = timeout - 1000;
+
+        //long finishBy = timeout - 1000;
         turn++;
+        System.out.println("---     huffman     ----");
+    	System.out.println("role number:"+getOwnRoleNumber());
         System.out.println("●----"+turn+"----●");
 
-        /*
-         * 現在の盤面状態からノードnを作り、
-         * rootノードがnull、つまり一番初めの時にはrootノードにnを代入する
-         * そうでない場合は、構築されている木からノードnと同じ盤面要素を持つノードを探す。
-         * あれば、そのノードの情報を上書きする。
-         */
         Node n=new Node(getCurrentState());
 
     	root=n;
 
-        //while(System.currentTimeMillis()<finishBy) {
+    	//while(System.currentTimeMillis()<finishBy) {
         for(int i=0;i<500;i++) {
         	MonteCalroPlayout(n);
        	}
 
-
-
-        /*
-         * movesが複数の要素を持つ場合は、次の手を選択するためにselectNectPlayメソッドを使用する。
-         * そうでない場合（交互手番のゲームにおいて相手の番であった時も）は、moves.get(0)がselectionとなる。
-         */
         List<Move> moves = theMachine.getLegalMoves(getCurrentState(), getRole());
         Move selection = moves.get(0);
 
@@ -152,28 +149,27 @@ public final class HuffmanBananaGamer extends SampleGamer
         	selection=selectNextPlay(n,moves);
         }
         globalDepth=n.depth+1;
+        int maxDigit=0;
+        huffmanSet saveHs=null;
+        for(long l:huffmanMemorys.keySet()) {
+        	huffmanSet hs=huffmanMemorys.get(l);
+        	if(hs.numDigit>maxDigit) {
+        		maxDigit=hs.numDigit;
+        		saveHs=hs;
+        	}
+        }
+        System.out.println("max digit:"+maxDigit);
+        System.out.println("state:"+saveHs.n.getState());
 
         long stop = System.currentTimeMillis();
-
-        System.out.println(MCTSutils.preprocess(n.state.toString()));
-    	System.out.println("regal  moves:"+moves);
-    	System.out.println("select moves:"+selection);
-    	System.out.println("huffman memory---size:"+huffmanMemorys.size());
-
-    	System.out.println(this.makeHuffmanCode(getCurrentState().toString()));
-     	System.out.println("similar :"+similarCount);
-   	 	System.out.println("contains:"+containsCount);
-   	 	System.out.println("percentage---"+(double)similarCount/containsCount);
-        System.out.println();
-
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
         return selection;
     }
-
     /*
      * select next legal move
      * the return type is Move
+     * changed the way to next state from child.v to child.selectionCount
      */
     public Move selectNextPlay(Node n,List<Move> moves) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
@@ -184,12 +180,11 @@ public final class HuffmanBananaGamer extends SampleGamer
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
 
-    		if(child.v>bestValue) {
-        		bestValue=child.v;
+     		if(child.selectionCount>bestValue) {
+        		bestValue=child.selectionCount;
         		bestState=key;
         	}
     	}
-
 
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);
         for(int i=0;i<moves.size();i++) {
@@ -222,7 +217,8 @@ public final class HuffmanBananaGamer extends SampleGamer
 
     public class Node{
     	int v; //times of visited
-    	MachineState state;//Board information
+      	int selectionCount; //times of actual selected node
+      	MachineState state;//Board information
     	int depth;//depth from root node
     	Map<MachineState ,Node> children;//all of child node
 
@@ -231,6 +227,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 
     	Node(MachineState state){
     		this.v=0;
+    		this.selectionCount=0;
     	    this.state=state;
     	    this.depth=0;
     	    this.children= new HashMap<MachineState ,HuffmanBananaGamer.Node>();
@@ -254,6 +251,9 @@ public final class HuffmanBananaGamer extends SampleGamer
     	public void visitValueCount() {
     		this.v++;
     	}
+    	public void selectCount() {
+    		this.selectionCount++;
+    	}
 
      	public void winRateCalculation() {
     		if(v!=0) {
@@ -270,6 +270,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 
     	public void expand(Node n){
     	    this.children.put(n.state,n);
+    	    n.selectCount();
     	}
 
     }
@@ -278,7 +279,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 
     public boolean firstPlayoutState=true;
     /*
-     * 一回のシミュレーションの過程で発生したノードはキューに突っ込む
+     * Playing MCTS method.
      */
     public void MonteCalroPlayout(Node n) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
     	StateMachine theMachine = getStateMachine();
@@ -290,6 +291,7 @@ public final class HuffmanBananaGamer extends SampleGamer
     	playerNum=getCurrentPlayerNum();
     	boolean isExpandNode=true;
 
+    	//Playing simulation until final state is reached.
     	while(!theMachine.isTerminal(state)) {
     		int childlenMaxSize=theMachine.getLegalMoves(node.state, theMachine.getRoles().get(playerNum)).size();
     		Node beforeNode=node;
@@ -305,7 +307,7 @@ public final class HuffmanBananaGamer extends SampleGamer
      	}
 		firstPlayoutState=true;
 
-
+		//Calculate rewards for all of players
     	List<Role> roleList=theMachine.getRoles();
     	int[] goalScore=new int[totalPlayerNumber];
     	for(int i=0;i<totalPlayerNumber;i++) {
@@ -314,8 +316,9 @@ public final class HuffmanBananaGamer extends SampleGamer
     	}
 
     	/*
-    	 * シミュレーションの過程で発生した盤面情報をHuffmanメモリに保存する。
-    	 * この時にキューに保存しているノードに訪れた回数、報酬を記録する。
+    	 * The board information generated in the course of the simulation is stored
+    	 * in the search experience.
+    	 * At this time, the node stored in the queue is recorded visited times and reward.
     	 */
       	Node parent=null;
       	for (Node v : que) {
@@ -326,6 +329,7 @@ public final class HuffmanBananaGamer extends SampleGamer
         	}
     		String huffman=makeHuffmanCode(v.state.toString());
     		addHufMemo(huffman,v,goalScore);
+    		v.selectCount();
     		parent=v;
     	}
     	if(saveChildNode!=null) {
@@ -335,7 +339,6 @@ public final class HuffmanBananaGamer extends SampleGamer
     		expandNode.setdepthValue(saveParentNode.depth+1);
     		saveParentNode.expand(expandNode);
     	}
-
 
     	return;
     }
@@ -397,11 +400,30 @@ public final class HuffmanBananaGamer extends SampleGamer
     	return uctValue;
     }
 
+
+    /*
+     * this method uses selectionCount in UCT calculation.
+     */
+    public double uctCalculationV2(Node parent,Node child) {
+    	double logVisitedValue=Math.log(parent.selectionCount);
+    	double searchValue=0;
+    	double C=0.7;
+
+    	if(child.selectionCount!=0) {
+    		searchValue=Math.sqrt(logVisitedValue/child.selectionCount);
+    	}else {
+    		searchValue=Double.MAX_VALUE;
+    	}
+     	child.winRateCalculation();//mark!!
+     	double uctValue=child.winRate[playerNum]+C*searchValue;
+
+    	return uctValue;
+    }
     /*
      * Return true if argument Node has child nodes that are all kinds of next board information.
      */
     public boolean isUnexploredState(Node n) throws MoveDefinitionException, TransitionDefinitionException {
-    	StateMachine theMachine = getStateMachine();
+        StateMachine theMachine = getStateMachine();
     	if(n.children==null)
     		return false;
 
@@ -413,6 +435,8 @@ public final class HuffmanBananaGamer extends SampleGamer
     	}
 
     	return false;
+
+
     }
 
     /*
@@ -420,26 +444,6 @@ public final class HuffmanBananaGamer extends SampleGamer
      *First, select the state from playout memory.
      *If it is not, then use StateMachine method to get the next state.
      */
-    /*
-    public MachineState getUnexploredNextState(Node n) throws MoveDefinitionException, TransitionDefinitionException {
-    	StateMachine theMachine = getStateMachine();
-    	 MachineState nextState;
-
-    	 supertest++;
-
-    	while(true) {
-    		List<Move> a=theMachine.getRandomJointMove(n.getState());
-    		nextState = theMachine.getNextState(n.getState(),a );
-            if(!n.children.containsKey(nextState)) {
-               	break;
-            }
-    	}
-
-
-    	return nextState;
-    }
-*/
-
 
     public Node getUnexploredNextNode(Node n) throws MoveDefinitionException, TransitionDefinitionException {
     	StateMachine theMachine = getStateMachine();
@@ -451,6 +455,7 @@ public final class HuffmanBananaGamer extends SampleGamer
     		nextState = theMachine.getNextState(n.getState(),a );
             if(!n.children.containsKey(nextState)) {
             	if(firstPlayoutState) {
+            		//System.out.println("ORIGINAL:"+mu.preprocess(nextState.toString()));
             		String huffman=makeHuffmanCode(nextState.toString());
             		selectHuffmanNode=selectHuffmanMemory(huffman);
             	}
@@ -524,18 +529,19 @@ public final class HuffmanBananaGamer extends SampleGamer
     int showAllCount=0;
     public void showAll(Node n) {
     	showAllCount++;
-    	//if(n.depth<=globalDepth) {
+    	/*
+    	if(n.depth<=globalDepth) {
 
     		System.out.println("--- show all ---");
     		System.out.println(n.state);
     	  	System.out.println(MCTSutils.preprocess(n.state.toString()));
     		System.out.println("*depth---"+n.depth+"  n:::"+n.v+",w:::"+n.winValue[getOwnRoleNumber()]);
     		System.out.println("w/v:::"+n.winValue[getOwnRoleNumber()]/n.v);
-    	//}
+    	}
 
     	if(n.children == null){
     		return;
-    	}
+    	}*/
     	for(MachineState key:n.children.keySet()){
     		//System.out.println("times of i ==== "+i++);
     		Node next=n.children.get(key);
@@ -561,7 +567,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 	 */
 	public boolean ipsilonGreedy() {
 		double rnd=Math.random();
-		double ipsilon=0.67;
+		double ipsilon=0.2;
 		if((1-ipsilon)>rnd)
 			return true;
 		return false;
@@ -581,6 +587,9 @@ public final class HuffmanBananaGamer extends SampleGamer
 			this.n=n;
 		}
 
+		/*
+		 * Divide bit string of the argument into 64-digit segments.
+		 */
 		public void setCode(String str) {
 			char c[]=str.toCharArray();
 			String result="";
@@ -593,15 +602,27 @@ public final class HuffmanBananaGamer extends SampleGamer
 					result="";
 				}
 			}
+			String border,padding;
+			if(spaceHash.equals("0")) {
+				border="1";
+				padding="0";
+			}else {
+				border="0";
+				padding="1";
+			}
+
 			if(result.length()>0) {
-				result+="1";
+				result+=border;
 				for(int i=result.length();i<HASHSIZE;i++)
-					result+="0";
+					result+=padding;
 
 				code[size++]=Long.parseLong(result,2);
 			}
 		}
 
+		/*
+		 * Update node information
+		 */
 		public void updateNode(int[] goalScore,int depth) {
 			this.n.visitValueCount();
 			this.n.setWinValue(goalScore);
@@ -610,18 +631,22 @@ public final class HuffmanBananaGamer extends SampleGamer
 		}
 	}
 
+	/*
+	 *  make the hash value by huffmanCode from argument state
+	 */
 	public String makeHuffmanCode(String state) {
 		state=mu.preprocess(state);
 		state=mu.wtnInboardInformation(state);
 		state=mu.pressRoleString(state, wardToCharMap,appearMap);
-		state=mu.makePafeBoard(state);
-		String hash=mu.encodeHaffman(state,haffmanHashMap);
+	    state=mu.makePafeBoard(state);
+	    String hash=mu.encodeHaffman(state,haffmanHashMap);
 
 		return hash;
 	}
-
-
-
+	/*
+	 * Record information about the argument in the search experience.
+	 * hash key is bit string about the state, hash value is huffmanSet
+	 */
 	public void addHufMemo(String hash,Node n,int[] goalScore) {
 
 		Node m=new Node(n.state);
@@ -645,33 +670,14 @@ public final class HuffmanBananaGamer extends SampleGamer
 			if(hs.n.state.equals(n.state)) {
 				hs.updateNode(goalScore,n.depth);
 				return;
-			}/*else {
-				for(int i=1;i<hs.size;i++) {
-					long semiKey=hs.code[i];
-					key=key ^ semiKey;
-					if(!huffmanMemorys.containsKey(key)) {
-						elsebadCount++;
-						huffmanMemorys.put(key,hs);
-						return;
-					}else if(i==hs.size-1){
-						hs=huffmanMemorys.get(key);
-						hs.updateNode(goalScore,n.depth);
-						semibadCount++;
-						return;
-					}
-				}*/
-				/*
-				System.out.println(MCTSutils.pressRoleString(MCTSutils.preprocess(hs.n.state.toString()),  fakeHashMap,fakeMap));
-				System.out.println(MCTSutils.pressRoleString(MCTSutils.preprocess(n.state.toString()),  fakeHashMap,fakeMap));
-				System.out.println();
-				*/
-			//}
-
+			}
 		}
 
 	}
-
-
+	/*
+	 * return Node which have the sum of all the information of the selected nodes
+	 * from the search experience.
+	 */
 	public Node selectHuffmanMemory(String state) {
 		Node matchNode=null;
 		huffmanSet hs=new huffmanSet(state,null);
@@ -682,12 +688,25 @@ public final class HuffmanBananaGamer extends SampleGamer
 		}
 		 matchNode=matchHashCode(key,hs);
 		 /*
+		  * if you want to get the same information as argument state from the search experience,
+		  * Use if(matchNode!=null) ~   return matchNode; and Set the comment out   Node similarNode=new Node(null); ~ return returnNode;
+		  */
+		 /*
 		 if(matchNode!=null) {
+			 getSimilarCount++;
 		     return matchNode;
 		 }
 		 return matchNode;
 		 */
+		 originalHash=key;
+		 /*
+		  * if you want to get the information similar to the argument state from the search experience,
+		  * Use   Node similarNode=new Node(null); ~ return returnNode; and Set the comment out if(matchNode!=null) ~   return matchNode;
+		  */
 		 Node similarNode=new Node(null);
+		 /*
+		  * searchSimilarHash's second argument is hamming length
+		  */
 		 similarNode=searchSimilarHash(0,2,key,similarNode);
 
 		 Node returnNode=new Node(getCurrentState());
@@ -705,40 +724,35 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 }
 		return returnNode;
 
-
 	}
-	public int similarCount=0;
-	public int containsCount=0;
 
+	public long originalHash=0;//use to calculate hamming length
+	/*
+	 * Recursive function
+	 * Finally, return Node which has sum of similar state visit times and values.
+	 */
 	public Node searchSimilarHash(int start,int depth, long hash,Node saveNode ){
 		long subHash=0;
 		if(depth==0)
 			return saveNode;
-
 		for(int i=start;i<HASHSIZE;i++) {
 			long a=(long)Math.pow(2, i);
 			subHash=hash^a;
 			if(huffmanMemorys.containsKey(subHash)) {
-				containsCount++;
-				if(this.ipsilonGreedy()) {
+				//if(searchSimilarTwoBitLength(originalHash,subHash)<6) {
 					Node n=huffmanMemorys.get(subHash).n;
 					saveNode.setWinValue(n.winValue);
 					saveNode.v+=n.v;
-					similarCount++;
 
-				}
-				/*
-				if(depth==2)
-					semiIcchi++;
-				if(depth==1)
-					semisemiIcchi++;
-					*/
+				//}
 			}
 			saveNode=searchSimilarHash(i+1,depth-1,subHash,saveNode);
 		}
 		return saveNode;
 	}
-
+	/*
+	 * return Node same as hash key about first argument from Exploration Experience.
+	 */
 	public  Node matchHashCode(long l,huffmanSet hs) {
 		if(huffmanMemorys.containsKey(l)) {
 			 huffmanSet semiHs=huffmanMemorys.get(l);
@@ -750,7 +764,27 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 }
 		return null;
 	}
+	/*
+	 * return humming length calculated from two argumentsz
+	 */
+	public int searchSimilarTwoBitLength(long l1, long l2) {
 
+		long result=l1^l2;
+		String xorStr=Long.toBinaryString(result);
+		int flag =-1;
+		int inx=0;
+		for(inx=0;inx<xorStr.length();inx++) {
+			char cc=xorStr.charAt(inx);
+			if(cc=='1') {
+				if(flag==-1)
+					flag=inx;
+				else
+					break;
+			}
+		}
+		int length=inx-flag-1;
+		return length;
+	}
 
 
 
