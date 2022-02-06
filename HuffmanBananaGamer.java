@@ -1,6 +1,8 @@
 package org.ggp.base.player.gamer.statemachine.sample.gpp_player;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +25,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-//1029
+//0205
 //add comment 0104
 public final class HuffmanBananaGamer extends SampleGamer
 {
@@ -107,6 +109,14 @@ public final class HuffmanBananaGamer extends SampleGamer
 			 if(s.equals("¥"))
 				 spaceHash=haffmanHashMap.get(s);
 		 }
+		 //mu.fixedLengthHuffman(haffmanHashMap);
+		 System.out.println("AFTER-----all of huffman hash map");
+		 for(String s:haffmanHashMap.keySet()) {
+			 System.out.println(wardToCharMap.get(s)+":::"+s+"---"+haffmanHashMap.get(s));
+			 if(s.equals("¥"))
+				 spaceHash=haffmanHashMap.get(s);
+		 }
+
 		 System.out.println(test);
 		 System.out.println("MAX(x,y) = ("+boardSize[0]+","+boardSize[1]+")");
 		 System.out.println("MIN(x,y) = ("+boardSize[2]+","+boardSize[3]+")");
@@ -117,6 +127,9 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 System.out.println(test);
 
 	 }
+
+	 public int testTimes=0;
+
     /**
      * Employs a simple sample "Monte Carlo" algorithm.
      */
@@ -149,17 +162,7 @@ public final class HuffmanBananaGamer extends SampleGamer
         	selection=selectNextPlay(n,moves);
         }
         globalDepth=n.depth+1;
-        int maxDigit=0;
-        huffmanSet saveHs=null;
-        for(long l:huffmanMemorys.keySet()) {
-        	huffmanSet hs=huffmanMemorys.get(l);
-        	if(hs.numDigit>maxDigit) {
-        		maxDigit=hs.numDigit;
-        		saveHs=hs;
-        	}
-        }
-        System.out.println("max digit:"+maxDigit);
-        System.out.println("state:"+saveHs.n.getState());
+        testTimes++;
 
         long stop = System.currentTimeMillis();
 
@@ -574,17 +577,16 @@ public final class HuffmanBananaGamer extends SampleGamer
 	}
 
 	/*part of huffman*/
-	Map<Long,huffmanSet> huffmanMemorys = new HashMap<>();
+	Map<huffmanSet,Node> huffmanMemorys = new HashMap<>();
 
 	public static class huffmanSet{
 		long[] code=new long[10];
+		List<Long> codeList= new ArrayList<Long>();
 		int size=0;
 		int numDigit=0;
-		Node n;
 
-		public huffmanSet(String str,Node n) {
+		public huffmanSet(String str) {
 			setCode(str);
-			this.n=n;
 		}
 
 		/*
@@ -598,7 +600,8 @@ public final class HuffmanBananaGamer extends SampleGamer
 				numDigit++;
 				if(result.length()>(HASHSIZE-1)) {
 					//String binary=result.substring(0,63);
-					code[size++]=Long.parseLong(result,2);
+					//code[size++]=Long.parseLong(result,2);
+					codeList.add(Long.parseLong(result,2));
 					result="";
 				}
 			}
@@ -615,20 +618,36 @@ public final class HuffmanBananaGamer extends SampleGamer
 				result+=border;
 				for(int i=result.length();i<HASHSIZE;i++)
 					result+=padding;
+				//code[size++]=Long.parseLong(result,2);
+				codeList.add(Long.parseLong(result,2));
 
-				code[size++]=Long.parseLong(result,2);
 			}
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (other instanceof huffmanSet) {
+				return codeList.equals(((huffmanSet) other).codeList);
+			}
+			return false;
+		}
+		@Override
+		public int hashCode() {
+			Long[] l=codeList.toArray(new Long[codeList.size()]);
+			return Arrays.hashCode(l);
 		}
 
 		/*
 		 * Update node information
 		 */
+		/*
 		public void updateNode(int[] goalScore,int depth) {
 			this.n.visitValueCount();
 			this.n.setWinValue(goalScore);
 			this.n.setdepthValue(depth);
 
 		}
+		*/
 	}
 
 	/*
@@ -653,22 +672,24 @@ public final class HuffmanBananaGamer extends SampleGamer
 		m.visitValueCount();
 		m.setWinValue(goalScore);
 		m.setdepthValue(n.depth);
-		huffmanSet hs=new huffmanSet(hash,m);
+		//huffmanSet hs=new huffmanSet(hash,m); ***KOUJI***
+		/*
+		 * create key for huffmanMemorys
+		 */
+		huffmanSet hs = new huffmanSet(hash);
 
-		long key=hs.code[0];
-		for(int i=1;i<hs.size;i++)
-			key=key^hs.code[i];
-
-		if(!huffmanMemorys.containsKey(key)) {
-			huffmanMemorys.put(key,hs);
+		if(!huffmanMemorys.containsKey(hs)) {
+			huffmanMemorys.put(hs,m);
 			return;
 		}else {
 			//衝突
-			hs=huffmanMemorys.get(key);
+			Node existNode=huffmanMemorys.get(hs);
 
+			if(existNode.state.equals(n.state)) {
+				existNode.visitValueCount();
+				existNode.setWinValue(goalScore);
+				existNode.setdepthValue(n.depth);
 
-			if(hs.n.state.equals(n.state)) {
-				hs.updateNode(goalScore,n.depth);
 				return;
 			}
 		}
@@ -680,13 +701,10 @@ public final class HuffmanBananaGamer extends SampleGamer
 	 */
 	public Node selectHuffmanMemory(String state) {
 		Node matchNode=null;
-		huffmanSet hs=new huffmanSet(state,null);
+		huffmanSet hs=new huffmanSet(state);
 
-		long key=hs.code[0];
-		for(int i=1;i<hs.size;i++) {
-			key=key^hs.code[i];
-		}
-		 matchNode=matchHashCode(key,hs);
+		//matchNode=matchHashCode(key,hs);
+		matchNode=huffmanMemorys.get(hs);
 		 /*
 		  * if you want to get the same information as argument state from the search experience,
 		  * Use if(matchNode!=null) ~   return matchNode; and Set the comment out   Node similarNode=new Node(null); ~ return returnNode;
@@ -698,7 +716,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 }
 		 return matchNode;
 		 */
-		 originalHash=key;
+		 originalHash=hs.codeList;
 		 /*
 		  * if you want to get the information similar to the argument state from the search experience,
 		  * Use   Node similarNode=new Node(null); ~ return returnNode; and Set the comment out if(matchNode!=null) ~   return matchNode;
@@ -707,7 +725,16 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 /*
 		  * searchSimilarHash's second argument is hamming length
 		  */
-		 similarNode=searchSimilarHash(0,2,key,similarNode);
+		 similarNode=searchSimilarHash(0,2,hs,similarNode);
+		 if(testTimes<1) {
+			 System.out.println("RESULT");
+			 for(Long l:hs.codeList)
+				 System.out.print(Long.toBinaryString(l));
+			 System.out.println();
+			 System.out.println("win value::"+similarNode.winValue[0]);
+			 System.out.println("visit time:"+similarNode.v);
+			 System.out.println();
+		 }
 
 		 Node returnNode=new Node(getCurrentState());
 		 if(matchNode!=null) {
@@ -726,26 +753,42 @@ public final class HuffmanBananaGamer extends SampleGamer
 
 	}
 
-	public long originalHash=0;//use to calculate hamming length
+	//public long originalHash=0;//use to calculate hamming length
+	public List<Long> originalHash;//use to calculate hamming length
 	/*
 	 * Recursive function
 	 * Finally, return Node which has sum of similar state visit times and values.
 	 */
-	public Node searchSimilarHash(int start,int depth, long hash,Node saveNode ){
-		long subHash=0;
+	public Node searchSimilarHash(int start,int depth, huffmanSet hs,Node saveNode ){
+		huffmanSet subHash=new huffmanSet("");
+		subHash.codeList=new ArrayList<Long>(hs.codeList);
 		if(depth==0)
 			return saveNode;
-		for(int i=start;i<HASHSIZE;i++) {
-			long a=(long)Math.pow(2, i);
-			subHash=hash^a;
+
+		for(int i=start;i<HASHSIZE*hs.codeList.size();i++) {
+			int index=i/HASHSIZE;
+			int j=i-HASHSIZE*index;
+			long a=(long)Math.pow(2, j);
+
+			subHash.codeList.set(index, hs.codeList.get(index)^a);
+
 			if(huffmanMemorys.containsKey(subHash)) {
 				//if(searchSimilarTwoBitLength(originalHash,subHash)<6) {
-					Node n=huffmanMemorys.get(subHash).n;
+					Node n=huffmanMemorys.get(subHash);
 					saveNode.setWinValue(n.winValue);
 					saveNode.v+=n.v;
-
+					if(testTimes<1) {
+						 for(Long l:subHash.codeList)
+							 System.out.print(Long.toBinaryString(l));
+						 System.out.println();
+						System.out.println("win value::"+n.winValue[0]);
+						System.out.println("visit time:"+n.v);
+					}
 				//}
 			}
+			if(i==HASHSIZE-1)
+				subHash.codeList.set(index, hs.codeList.get(index));
+
 			saveNode=searchSimilarHash(i+1,depth-1,subHash,saveNode);
 		}
 		return saveNode;
@@ -753,6 +796,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 	/*
 	 * return Node same as hash key about first argument from Exploration Experience.
 	 */
+	/*
 	public  Node matchHashCode(long l,huffmanSet hs) {
 		if(huffmanMemorys.containsKey(l)) {
 			 huffmanSet semiHs=huffmanMemorys.get(l);
@@ -763,7 +807,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 			 return semiHs.n;
 		 }
 		return null;
-	}
+	}*/
 	/*
 	 * return humming length calculated from two argumentsz
 	 */
