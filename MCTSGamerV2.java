@@ -344,7 +344,7 @@ public final class MCTSGamerV2 extends SampleGamer
     	MachineState bestState=null;
     	Move bestMove=null;
     	int bestValue=0;
-    	System.out.println("MCTSGamerV2 --->>> select Next Play");
+    	//System.out.println("MCTSGamerV2 --->>> select Next Play");
      	int winValueTotal=0;
     	for(MachineState key:n.children.keySet()) {
     		Node child=n.children.get(key);
@@ -361,7 +361,7 @@ public final class MCTSGamerV2 extends SampleGamer
         	}
     	}
 
-    	System.out.println("win total:::"+winValueTotal);
+    	//System.out.println("win total:::"+winValueTotal);
 
     	long start=System.nanoTime();
     	Map<Move, List<MachineState>> map=theMachine.getNextStates(getCurrentState(),role);

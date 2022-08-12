@@ -7,10 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MCTSutils {
+	public static Map<String,Integer> rowWordToNumberMap = new HashMap<>();
+	public static Map<String,Integer> columnWordToNumberMap = new HashMap<>();
+	/*
 	public MCTSutils() {
 		rowWordToNumberMap = new HashMap<>();
 		columnWordToNumberMap = new HashMap<>();
-	}
+	}*/
 
 	public static String hash(String str,int lengthOfHash){
 		byte[] ascii=str.getBytes();
@@ -331,6 +334,7 @@ public class MCTSutils {
 		ArrayList<Integer> newColumns = new ArrayList<>(columns);
 		Collections.sort(newRows);
 		Collections.sort(newColumns);
+
 		str=str.replace("(","");
 			String[] states=str.replace("(","").split("[)]");
 		String result="";
@@ -388,8 +392,6 @@ public class MCTSutils {
 
 
 	}
-	public static Map<String,Integer> rowWordToNumberMap = new HashMap<>();
-	public static Map<String,Integer> columnWordToNumberMap = new HashMap<>();
 
 	public static int wordToNumber(String str,Map<String,Integer> map) {
 		if(str.matches("[+-]?\\d*(\\.\\d+)?")) {

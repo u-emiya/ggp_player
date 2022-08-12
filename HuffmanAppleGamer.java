@@ -180,6 +180,9 @@ public final class HuffmanAppleGamer extends SampleGamer
         for(long l:ll)
         	System.out.println(l);
         System.out.println(Arrays.hashCode(ll));
+
+        System.out.println("select count:"+selectCount);
+        System.out.println("per count:"+((double)selectCount/expandCount));
         long stop = System.currentTimeMillis();
 
         notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
@@ -295,6 +298,8 @@ public final class HuffmanAppleGamer extends SampleGamer
     }
     public int errorCount=0;
     public int turn=0;
+    public int selectCount=0;//test0210
+    public int expandCount=0;//test0210
 
     public boolean firstPlayoutState=true;
     /*
@@ -357,6 +362,7 @@ public final class HuffmanAppleGamer extends SampleGamer
     		expandNode.setWinValue(saveChildNode.winValue);
     		expandNode.setdepthValue(saveParentNode.depth+1);
     		saveParentNode.expand(expandNode);
+    		expandCount++;
     	}
 
     	return;
@@ -758,12 +764,13 @@ public final class HuffmanAppleGamer extends SampleGamer
 			long a=(long)Math.pow(2, i);
 			subHash=hash^a;
 			if(huffmanMemorys.containsKey(subHash)) {
-				//if(searchSimilarTwoBitLength(originalHash,subHash)<6) {
+				if(searchSimilarTwoBitLength(originalHash,subHash)<6) {
+					selectCount++;
 					Node n=huffmanMemorys.get(subHash).n;
 					saveNode.setWinValue(n.winValue);
 					saveNode.v+=n.v;
 
-				//}
+				}
 			}
 			saveNode=searchSimilarHash(i+1,depth-1,subHash,saveNode);
 		}

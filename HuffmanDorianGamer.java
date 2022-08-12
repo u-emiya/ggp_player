@@ -12,7 +12,6 @@ import org.ggp.base.apps.player.detail.DetailPanel;
 import org.ggp.base.apps.player.detail.SimpleDetailPanel;
 import org.ggp.base.player.gamer.event.GamerSelectedMoveEvent;
 import org.ggp.base.player.gamer.exception.GamePreviewException;
-import org.ggp.base.player.gamer.statemachine.sample.gpp_player.Huffman.node;
 import org.ggp.base.util.game.Game;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
@@ -25,13 +24,15 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
-//0207
+//0406
 //add comment 0104
-public final class HuffmanBananaGamer extends SampleGamer
+public final class HuffmanDorianGamer extends SampleGamer
 {
 	//int[] boardSize= {-1,-1,Integer.MAX_VALUE,Integer.MAX_VALUE};
 	int[] boardSize= {-1,-1,1,1};
-	 Map<String,String> haffmanHashMap=new HashMap<>();
+	 //Map<String,String> haffmanHashMap=new HashMap<>();
+	 Map<String,String> haffmanHashMapV2=new HashMap<>();
+
 	 Map<String,String> wardToCharMap=new HashMap<>();
 	 Map<String,Integer> appearMap=new HashMap<>();
 	 MCTSutils mu=new MCTSutils();
@@ -98,7 +99,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 		 for(String ccc:wardToCharMap.keySet()) {
 			 System.out.println(ccc+"::"+wardToCharMap.get(ccc));
 		 }
-
+		 /*
 		 node nnn=hf.makeNode(appearMap);
 		 hf.makeHuffmanTree(nnn);
 		 haffmanHashMap=hf.takeHaffmanHash(hf.makeHuffmanCode(nnn));
@@ -109,22 +110,42 @@ public final class HuffmanBananaGamer extends SampleGamer
 			 if(s.equals("¥"))
 				 spaceHash=haffmanHashMap.get(s);
 		 }
+		 */
+		 int index=0;
+		 haffmanHashMapV2.put("¥",Integer.toBinaryString(index++));
+
+		 for(String ccc:wardToCharMap.keySet()) {
+			 haffmanHashMapV2.put(ccc,Integer.toBinaryString(index));
+			 index++;
+		 }
+
+		 System.out.printf("\nafter changed test\n");
+		 for(String ccc: haffmanHashMapV2.keySet()) {
+			 System.out.println(ccc+"::"+haffmanHashMapV2.get(ccc));
+		 }
+
+
+
+		 /*
 		 mu.fixedLengthHuffman(haffmanHashMap);
 		 System.out.println("AFTER-----all of huffman hash map");
 		 for(String s:haffmanHashMap.keySet()) {
 			 System.out.println(wardToCharMap.get(s)+":::"+s+"---"+haffmanHashMap.get(s));
 			 if(s.equals("¥"))
 				 spaceHash=haffmanHashMap.get(s);
-		 }
+		 }*/
 
 		 System.out.println(test);
 		 System.out.println("MAX(x,y) = ("+boardSize[0]+","+boardSize[1]+")");
 		 System.out.println("MIN(x,y) = ("+boardSize[2]+","+boardSize[3]+")");
 		 test=mu.makePafeBoard(test);
+		 test="rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrbbbbbbbb";
 		 System.out.println(test);
 		 System.out.println("length:"+test.length());
-		 test=mu.encodeHaffman(test,haffmanHashMap);
+		 test=mu.encodeHaffman(test,haffmanHashMapV2);
 		 System.out.println(test);
+		 System.out.println("length:"+test.length());
+
 
 	 }
 
@@ -215,7 +236,7 @@ public final class HuffmanBananaGamer extends SampleGamer
     	totalPlayerNumber=getStateMachine().getRoles().size();
     	huffmanMemorys = new HashMap<>();
     	turn=0;
-    	haffmanHashMap=new HashMap<>();
+    	haffmanHashMapV2=new HashMap<>();
    	 	wardToCharMap=new HashMap<>();
    	 	appearMap=new HashMap<>();
     	mu=new MCTSutils();
@@ -236,7 +257,7 @@ public final class HuffmanBananaGamer extends SampleGamer
     		this.selectionCount=0;
     	    this.state=state;
     	    this.depth=0;
-    	    this.children= new HashMap<MachineState ,HuffmanBananaGamer.Node>();
+    	    this.children= new HashMap<MachineState ,HuffmanDorianGamer.Node>();
     	    this.winValue=new int[totalPlayerNumber];
     	    this.winRate=new double[totalPlayerNumber];
     	}
@@ -285,7 +306,6 @@ public final class HuffmanBananaGamer extends SampleGamer
     public int selectCount=0;//test0210
     public int expandCount=0;//test0210
     public int bunboCount=0;//test0508
-
 
 
     public boolean firstPlayoutState=true;
@@ -667,7 +687,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 		state=mu.wtnInboardInformation(state);
 		state=mu.pressRoleString(state, wardToCharMap,appearMap);
 	    state=mu.makePafeBoard(state);
-	    String hash=mu.encodeHaffman(state,haffmanHashMap);
+	    String hash=mu.encodeHaffman(state,haffmanHashMapV2);
 
 		return hash;
 	}
@@ -718,35 +738,31 @@ public final class HuffmanBananaGamer extends SampleGamer
 		  * if you want to get the same information as argument state from the search experience,
 		  * Use if(matchNode!=null) ~   return matchNode; and Set the comment out   Node similarNode=new Node(null); ~ return returnNode;
 		  */
-		/*
+
 		bunboCount++;
 		 if(matchNode!=null) {
 			 selectCount++;
 		     return matchNode;
 		 }
 		 return matchNode;
-	*/
+
 		 /*
 		  * if you want to get the information similar to the argument state from the search experience,
 		  * Use   Node similarNode=new Node(null); ~ return returnNode; and Set the comment out if(matchNode!=null) ~   return matchNode;
 		  */
-
+		/*
 		 Node similarNode=new Node(null);
 		 originalHash=hs.codeList;
 
 		 //  searchSimilarHash's second argument is hamming length
 		 bunboCount++;
-		 similarNode=searchSimilarHash(0,3,hs,similarNode);
+		 similarNode=searchSimilarHash(0,2,hs,similarNode);
 
 		 if(testTimes<1) {
 			 System.out.println("RESULT");
-			 int apple=0;
-			 for(Long l:hs.codeList) {
+			 for(Long l:hs.codeList)
 				 System.out.print(Long.toBinaryString(l));
-				 apple+=Long.toBinaryString(l).length();
-			 }
 			 System.out.println();
-			 System.out.println("code length::"+apple);
 			 System.out.println("win value::"+similarNode.winValue[0]);
 			 System.out.println("visit time:"+similarNode.v);
 			 System.out.println();
@@ -766,7 +782,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 			 return null;
 		 }
 		return returnNode;
-
+	*/
 	}
 
 	//public long originalHash=0;//use to calculate hamming length
@@ -873,7 +889,7 @@ public final class HuffmanBananaGamer extends SampleGamer
 
     @Override
     public String getName() {
-        return "HuffmanBananaPlayer";
+        return "HuffmanDorianPlayer";
     }
 
     @Override
