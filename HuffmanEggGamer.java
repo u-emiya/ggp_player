@@ -565,7 +565,6 @@ public final class HuffmanEggGamer extends SampleGamer
     	}
     }
 
-
     /*
      * Return the current player number who can play the legal move;
      */
